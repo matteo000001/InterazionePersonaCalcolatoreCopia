@@ -226,7 +226,13 @@ export function SecretarySubjectsPage({
       {successMessage ? <div className="alert success">{successMessage}</div> : null}
 
       <section className="dashboard-grid secretary-layout">
-        <div className="panel">
+        <form
+          className="panel"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleSaveSubject();
+          }}
+        >
           <div className="panel__header">
             <div>
               <p className="eyebrow">Materie</p>
@@ -309,9 +315,8 @@ export function SecretarySubjectsPage({
 
           <div className="inline-actions">
             <button
-              type="button"
+              type="submit"
               className="primary"
-              onClick={() => void handleSaveSubject()}
               disabled={isSubmitting}
             >
               {editingSubjectId ? 'Salva modifiche' : 'Aggiungi materia'}
@@ -327,7 +332,7 @@ export function SecretarySubjectsPage({
               </button>
             ) : null}
           </div>
-        </div>
+        </form>
 
         <div className="panel">
           <div className="panel__header">

@@ -168,7 +168,13 @@ export function SecretaryUsersPage({
       {successMessage ? <div className="alert success">{successMessage}</div> : null}
 
       <section className="dashboard-grid secretary-layout">
-        <div className="panel">
+        <form
+          className="panel"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleSaveUser();
+          }}
+        >
           <div className="panel__header">
             <div>
               <p className="eyebrow">Utenti</p>
@@ -249,9 +255,8 @@ export function SecretaryUsersPage({
 
           <div className="inline-actions">
             <button
-              type="button"
+              type="submit"
               className="primary"
-              onClick={() => void handleSaveUser()}
               disabled={isSubmitting}
             >
               {editingUserId ? 'Salva modifiche' : 'Aggiungi utente'}
@@ -267,7 +272,7 @@ export function SecretaryUsersPage({
               </button>
             ) : null}
           </div>
-        </div>
+        </form>
 
         <div className="panel">
           <div className="panel__header">

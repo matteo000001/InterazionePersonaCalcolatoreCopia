@@ -172,7 +172,13 @@ export function SecretaryDegreeProgramsPage({
       {successMessage ? <div className="alert success">{successMessage}</div> : null}
 
       <section className="dashboard-grid secretary-layout">
-        <div className="panel">
+        <form
+          className="panel"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleCreateDegreeProgram();
+          }}
+        >
           <div className="panel__header">
             <div>
               <p className="eyebrow">Corsi di laurea</p>
@@ -252,14 +258,13 @@ export function SecretaryDegreeProgramsPage({
           </div>
 
           <button
-            type="button"
+            type="submit"
             className="primary"
-            onClick={() => void handleCreateDegreeProgram()}
             disabled={isSubmitting}
           >
             Aggiungi corso di laurea
           </button>
-        </div>
+        </form>
 
         <div className="panel">
           <div className="panel__header">

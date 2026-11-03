@@ -172,7 +172,13 @@ export function SecretaryAppointmentsSearchPage() {
       {error ? <div className="alert error">{error}</div> : null}
 
       <section className="dashboard-grid secretary-layout">
-        <div className="panel">
+        <form
+          className="panel"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void handleSearchAppointments();
+          }}
+        >
           <div className="panel__header">
             <div>
               <p className="eyebrow">Appelli</p>
@@ -267,9 +273,8 @@ export function SecretaryAppointmentsSearchPage() {
           </div>
 
           <button
-            type="button"
+            type="submit"
             className="primary"
-            onClick={() => void handleSearchAppointments()}
             disabled={
               isSubmitting ||
               !appointmentSearch.degreeProgramId ||
@@ -278,7 +283,7 @@ export function SecretaryAppointmentsSearchPage() {
           >
             Avvia ricerca
           </button>
-        </div>
+        </form>
 
         <div className="panel">
           <div className="panel__header">
