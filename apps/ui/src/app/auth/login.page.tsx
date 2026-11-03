@@ -73,7 +73,7 @@ export function LoginPage() {
           </button>
         </div>
 
-        {error ? <div className="alert error">{error}</div> : null}
+        {error ? <div className="alert error" role="alert">{error}</div> : null}
 
         <form className="auth-form" onSubmit={handleSubmit}>
           {isRegistering ? (

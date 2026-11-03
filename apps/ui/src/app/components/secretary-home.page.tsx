@@ -144,7 +144,7 @@ export function SecretaryHomePage() {
               <h2>Configurazione sessione</h2>
             </div>
           </div>
-          <div className="alert error">
+          <div className="alert error" role="alert">
             Non e stato possibile leggere la configurazione della sessione corrente
             ({loadError}). La configurazione salvata non e stata cancellata: riprova
             prima di modificarla o di crearne una nuova.
@@ -163,8 +163,8 @@ export function SecretaryHomePage() {
 
   return (
     <section className="session-home">
-      {error ? <div className="alert error">{error}</div> : null}
-      {successMessage ? <div className="alert success">{successMessage}</div> : null}
+      {error ? <div className="alert error" role="alert">{error}</div> : null}
+      {successMessage ? <div className="alert success" role="status">{successMessage}</div> : null}
 
       <div className="panel session-panel">
         <div className="panel__header">
@@ -242,7 +242,7 @@ export function SecretaryHomePage() {
         </div>
 
         {dateErrors.length > 0 ? (
-          <ul className="alert error field-errors">
+          <ul className="alert error field-errors" role="alert">
             {dateErrors.map((dateError) => (
               <li key={dateError}>{dateError}</li>
             ))}

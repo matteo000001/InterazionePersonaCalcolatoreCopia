@@ -249,7 +249,7 @@ export function TeacherDashboard() {
             Verifica che esistano una sessione corrente, almeno un corso di laurea
             e almeno un anno di corso.
           </p>
-          <div className="alert error">
+          <div className="alert error" role="alert">
             {error ?? 'Dati di calendario mancanti nel database'}
           </div>
         </section>
@@ -283,8 +283,8 @@ export function TeacherDashboard() {
         </div>
       </section>
 
-      {error ? <div className="alert error">{error}</div> : null}
-      {successMessage ? <div className="alert success">{successMessage}</div> : null}
+      {error ? <div className="alert error" role="alert">{error}</div> : null}
+      {successMessage ? <div className="alert success" role="status">{successMessage}</div> : null}
 
       <section className="dashboard-grid">
         <div className="panel">

@@ -169,7 +169,7 @@ export function SecretaryAppointmentsSearchPage() {
 
   return (
     <>
-      {error ? <div className="alert error">{error}</div> : null}
+      {error ? <div className="alert error" role="alert">{error}</div> : null}
 
       <section className="dashboard-grid secretary-layout">
         <form

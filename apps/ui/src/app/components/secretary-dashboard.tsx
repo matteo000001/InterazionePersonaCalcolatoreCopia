@@ -162,7 +162,7 @@ export function SecretaryDashboard() {
         </div>
       </section>
 
-      {error ? <div className="alert error">{error}</div> : null}
+      {error ? <div className="alert error" role="alert">{error}</div> : null}
       {renderSelectedPage()}
     </main>
   );

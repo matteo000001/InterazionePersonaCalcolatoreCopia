@@ -37,6 +37,7 @@ export function AvailabilityCalendar({
             selectedDate === day.date ? 'is-selected' : ''
           }`}
           onClick={() => onSelect(day.date)}
+          aria-pressed={selectedDate === day.date}
         >
           <span className="day-card__date">{day.date}</span>
           <span className="day-card__status">{labelByStatus[day.status]}</span>

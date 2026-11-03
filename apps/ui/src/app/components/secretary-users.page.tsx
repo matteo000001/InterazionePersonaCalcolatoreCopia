@@ -180,8 +180,8 @@ export function SecretaryUsersPage({
 
   return (
     <>
-      {error ? <div className="alert error">{error}</div> : null}
-      {successMessage ? <div className="alert success">{successMessage}</div> : null}
+      {error ? <div className="alert error" role="alert">{error}</div> : null}
+      {successMessage ? <div className="alert success" role="status">{successMessage}</div> : null}
 
       <section className="dashboard-grid secretary-layout">
         <form

@@ -242,8 +242,8 @@ export function SecretarySubjectsPage({
 
   return (
     <>
-      {error ? <div className="alert error">{error}</div> : null}
-      {successMessage ? <div className="alert success">{successMessage}</div> : null}
+      {error ? <div className="alert error" role="alert">{error}</div> : null}
+      {successMessage ? <div className="alert success" role="status">{successMessage}</div> : null}
 
       <section className="dashboard-grid secretary-layout">
         <form
@@ -295,7 +295,7 @@ export function SecretarySubjectsPage({
           </div>
 
           {selectedTeacherHasNoPrograms ? (
-            <div className="alert error">
+            <div className="alert error" role="alert">
               {selectedSubjectTeacher?.name} non ha corsi di laurea assegnati, quindi
               non e possibile associargli una materia. Assegna prima i corsi al
               docente nella sezione «Utenti» (Modifica &gt; Corsi gestiti).
