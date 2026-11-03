@@ -332,6 +332,7 @@ export function SecretaryUsersPage({
               <div className="summary-row" key={currentUser.id}>
                 <span>
                   {currentUser.name}
+                  {currentUser.id === currentUserId ? ' (tu)' : ''}
                   <br />
                   {currentUser.email}
                 </span>
@@ -354,9 +355,17 @@ export function SecretaryUsersPage({
                     className="danger"
                     onClick={() => void handleDeleteUser(currentUser.id)}
                     disabled={isSubmitting || currentUser.id === currentUserId}
+                    aria-describedby={
+                      currentUser.id === currentUserId ? 'self-delete-hint' : undefined
+                    }
                   >
                     Elimina
                   </button>
+                  {currentUser.id === currentUserId ? (
+                    <small id="self-delete-hint" className="row-hint">
+                      Non puoi eliminare l'account con cui hai effettuato l'accesso.
+                    </small>
+                  ) : null}
                 </span>
               </div>
             ))}

@@ -621,3 +621,9 @@ button.compact-appointment.is-current {
 .list-toolbar label {
   flex: 1 1 160px;
 }
+
+.row-hint {
+  flex-basis: 100%;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
