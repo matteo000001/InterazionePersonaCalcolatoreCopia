@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, MinLength } from 'class-validator';
+import { IsIn, IsString, MinLength } from 'class-validator';
 
 export class CreateDegreeProgramDto {
   @ApiProperty({
@@ -25,4 +25,14 @@ export class CreateDegreeProgramDto {
   @IsString()
   @MinLength(3)
   name!: string;
+
+  @ApiProperty({
+    example: 3,
+    enum: [2, 3],
+    description: 'Duration in years: 3 = laurea triennale, 2 = laurea magistrale',
+  })
+  @IsIn([2, 3], {
+    message: 'Il tipo di corso deve essere triennale (3 anni) o magistrale (2 anni)',
+  })
+  durationYears!: number;
 }

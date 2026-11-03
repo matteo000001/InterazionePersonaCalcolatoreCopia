@@ -15,6 +15,8 @@ export interface DegreeProgram {
   id: string;
   code: string;
   name: string;
+  // 3 = laurea triennale, 2 = laurea magistrale, null = non indicato.
+  durationYears?: number | null;
 }
 
 export interface CourseYear {

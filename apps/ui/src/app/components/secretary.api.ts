@@ -45,6 +45,7 @@ export type CreateSecretaryDegreeProgramPayload = {
   id: string;
   code: string;
   name: string;
+  durationYears: number;
 };
 
 export async function fetchSecretaryUsers(role?: UserRole): Promise<User[]> {

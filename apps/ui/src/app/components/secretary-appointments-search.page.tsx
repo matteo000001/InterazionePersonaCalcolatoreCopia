@@ -17,7 +17,6 @@ import {
 import {
   AppointmentSearchState,
   defaultAppointmentSearch,
-  getStoredDegreeProgramYears,
   getSubjectMaxCourseYear,
 } from './secretary-dashboard.types';
 
@@ -34,7 +33,6 @@ export function SecretaryAppointmentsSearchPage() {
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [degreeProgramYears] = useState(() => getStoredDegreeProgramYears());
 
   useEffect(() => {
     async function loadAppointmentsPage() {
@@ -140,7 +138,7 @@ export function SecretaryAppointmentsSearchPage() {
     ? getSubjectMaxCourseYear(
         [appointmentSearch.degreeProgramId],
         courseYears,
-        degreeProgramYears
+        degreePrograms
       )
     : undefined;
   const appointmentCourseYearOptions =

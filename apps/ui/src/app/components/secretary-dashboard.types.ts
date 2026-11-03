@@ -82,34 +82,12 @@ export const defaultAppointmentSearch: AppointmentSearchState = {
   subjectId: '',
 };
 
-export const DEGREE_PROGRAM_YEARS_KEY = 'exam-planner-degree-program-years';
-
-export function getStoredDegreeProgramYears(): Record<
-  string,
-  DegreeProgramYearCount
-> {
-  const storedValue = localStorage.getItem(DEGREE_PROGRAM_YEARS_KEY);
-
-  if (!storedValue) {
-    return {};
-  }
-
-  try {
-    return JSON.parse(storedValue) as Record<string, DegreeProgramYearCount>;
-  } catch {
-    return {};
-  }
-}
-
 export function getDegreeProgramDuration(type: DegreeProgramType) {
   return type === 'triennale' ? 3 : 2;
 }
 
-export function getDegreeProgramTypeLabel(
-  program: DegreeProgram,
-  degreeProgramYears: Record<string, DegreeProgramYearCount>
-) {
-  const years = degreeProgramYears[program.id];
+export function getDegreeProgramTypeLabel(program: DegreeProgram) {
+  const years = program.durationYears;
 
   if (years === 3) {
     return 'Laurea triennale';
@@ -125,7 +103,7 @@ export function getDegreeProgramTypeLabel(
 export function getSubjectMaxCourseYear(
   degreeProgramIds: string[],
   courseYears: CourseYear[],
-  degreeProgramYears: Record<string, DegreeProgramYearCount>
+  degreePrograms: DegreeProgram[]
 ) {
   if (degreeProgramIds.length === 0) {
     return undefined;
@@ -133,7 +111,9 @@ export function getSubjectMaxCourseYear(
 
   const maxConfiguredYear = Math.max(...courseYears.map((year) => year.year));
   const selectedYearCounts = degreeProgramIds.map(
-    (degreeProgramId) => degreeProgramYears[degreeProgramId] ?? maxConfiguredYear
+    (degreeProgramId) =>
+      degreePrograms.find((program) => program.id === degreeProgramId)
+        ?.durationYears ?? maxConfiguredYear
   );
 
   return Math.min(...selectedYearCounts);

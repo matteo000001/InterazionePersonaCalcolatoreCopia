@@ -55,8 +55,13 @@ export class CatalogController {
           type: 'string',
           example: 'Ingegneria Gestionale',
         },
+        durationYears: {
+          type: 'number',
+          enum: [2, 3],
+          example: 3,
+        },
       },
-      required: ['id', 'code', 'name'],
+      required: ['id', 'code', 'name', 'durationYears'],
     },
   })
   @ApiCreatedResponse({

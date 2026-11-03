@@ -7,13 +7,10 @@ import {
 } from './secretary.api';
 import {
   defaultDegreeProgramForm,
-  DEGREE_PROGRAM_YEARS_KEY,
   DegreeProgramFormState,
   DegreeProgramType,
-  DegreeProgramYearCount,
   getDegreeProgramDuration,
   getDegreeProgramTypeLabel,
-  getStoredDegreeProgramYears,
 } from './secretary-dashboard.types';
 import { compareText, ListToolbar, matchesSearch } from './list-toolbar';
 
@@ -27,9 +24,6 @@ export function SecretaryDegreeProgramsPage({
   const [degreePrograms, setDegreePrograms] = useState<DegreeProgram[]>([]);
   const [degreeProgramForm, setDegreeProgramForm] =
     useState<DegreeProgramFormState>(defaultDegreeProgramForm);
-  const [degreeProgramYears, setDegreeProgramYears] = useState<
-    Record<string, DegreeProgramYearCount>
-  >(() => getStoredDegreeProgramYears());
   const [programSearch, setProgramSearch] = useState('');
   const [programSort, setProgramSort] = useState('name');
   const [loading, setLoading] = useState(true);
@@ -77,29 +71,6 @@ export function SecretaryDegreeProgramsPage({
     setDegreePrograms(loadedDegreePrograms);
   }
 
-  function updateDegreeProgramYears(
-    degreeProgramId: string,
-    years: DegreeProgramYearCount
-  ) {
-    setDegreeProgramYears((current) => {
-      const next = {
-        ...current,
-        [degreeProgramId]: years,
-      };
-      localStorage.setItem(DEGREE_PROGRAM_YEARS_KEY, JSON.stringify(next));
-      return next;
-    });
-  }
-
-  function removeDegreeProgramYears(degreeProgramId: string) {
-    setDegreeProgramYears((current) => {
-      const next = { ...current };
-      delete next[degreeProgramId];
-      localStorage.setItem(DEGREE_PROGRAM_YEARS_KEY, JSON.stringify(next));
-      return next;
-    });
-  }
-
   async function handleCreateDegreeProgram() {
     setIsSubmitting(true);
     setError(null);
@@ -127,11 +98,8 @@ export function SecretaryDegreeProgramsPage({
         id: degreeProgramId,
         code: degreeProgramCode,
         name: degreeProgramName,
+        durationYears: getDegreeProgramDuration(degreeProgramForm.type),
       });
-      updateDegreeProgramYears(
-        degreeProgramId,
-        getDegreeProgramDuration(degreeProgramForm.type)
-      );
       await refreshDegreePrograms();
       setDegreeProgramForm(defaultDegreeProgramForm);
       setSuccessMessage('Corso di laurea creato');
@@ -149,7 +117,6 @@ export function SecretaryDegreeProgramsPage({
 
     try {
       await deleteSecretaryDegreeProgram(id);
-      removeDegreeProgramYears(id);
       await refreshDegreePrograms();
       setSuccessMessage('Corso di laurea eliminato');
     } catch (err) {
@@ -319,7 +286,7 @@ export function SecretaryDegreeProgramsPage({
                 <span>
                   {program.name}
                   <br />
-                  {getDegreeProgramTypeLabel(program, degreeProgramYears)}
+                  {getDegreeProgramTypeLabel(program)}
                 </span>
                 <span className="inline-actions">
                   <button

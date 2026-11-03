@@ -31,6 +31,7 @@ export class CatalogRepository {
       id: dto.id.trim(),
       code: dto.code.trim(),
       name: dto.name.trim(),
+      durationYears: dto.durationYears,
     });
 
     return this.repository.save(degreeProgram);

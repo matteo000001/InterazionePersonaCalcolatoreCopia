@@ -17,7 +17,6 @@ import {
 } from './secretary.api';
 import {
   defaultSubjectForm,
-  getStoredDegreeProgramYears,
   getSubjectMaxCourseYear,
   SubjectFormState,
 } from './secretary-dashboard.types';
@@ -46,7 +45,6 @@ export function SecretarySubjectsPage({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
-  const [degreeProgramYears] = useState(() => getStoredDegreeProgramYears());
 
   useEffect(() => {
     async function loadSubjectsPage() {
@@ -109,7 +107,7 @@ export function SecretarySubjectsPage({
     const maxSelectedCourseYear = getSubjectMaxCourseYear(
       selectedIds,
       courseYears,
-      degreeProgramYears
+      degreePrograms
     );
 
     if (
@@ -215,7 +213,7 @@ export function SecretarySubjectsPage({
   const subjectMaxCourseYear = getSubjectMaxCourseYear(
     subjectForm.degreeProgramIds,
     courseYears,
-    degreeProgramYears
+    degreePrograms
   );
   const subjectCourseYearOptions =
     subjectMaxCourseYear === undefined
