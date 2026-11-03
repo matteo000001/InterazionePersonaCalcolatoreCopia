@@ -605,3 +605,8 @@ button.compact-appointment.is-current {
     justify-self: stretch;
   }
 }
+
+.field-errors {
+  margin: 0;
+  padding-left: 32px;
+}

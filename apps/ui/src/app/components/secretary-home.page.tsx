@@ -2,6 +2,39 @@ import { useEffect, useState } from 'react';
 import {createCurrentSession,fetchCurrentSessionIfExists,saveCurrentSession,} from './secretary.api';
 import {defaultSessionForm,SessionFormState,} from './secretary-dashboard.types';
 
+// Sposta una data AAAA-MM-GG di `amount` giorni (stringa vuota se la data manca).
+function shiftDate(date: string, amount: number) {
+  if (!date) {
+    return '';
+  }
+
+  const next = new Date(`${date}T00:00:00.000Z`);
+  next.setUTCDate(next.getUTCDate() + amount);
+  return next.toISOString().slice(0, 10);
+}
+
+function getSessionDateErrors(form: SessionFormState) {
+  const errors: string[] = [];
+
+  if (form.sessionStart && form.sessionEnd && form.sessionEnd < form.sessionStart) {
+    errors.push('La fine della sessione deve essere uguale o successiva all\'inizio.');
+  }
+
+  if (form.planningStart && form.planningEnd && form.planningEnd < form.planningStart) {
+    errors.push(
+      'La fine della pianificazione deve essere uguale o successiva all\'inizio.'
+    );
+  }
+
+  if (form.planningEnd && form.sessionStart && form.planningEnd >= form.sessionStart) {
+    errors.push(
+      'La finestra di pianificazione deve terminare prima dell\'inizio della sessione esami.'
+    );
+  }
+
+  return errors;
+}
+
 export function SecretaryHomePage() {
   const [sessionForm, setSessionForm] =
     useState<SessionFormState>(defaultSessionForm);
@@ -63,6 +96,8 @@ export function SecretaryHomePage() {
           : value,
     }));
   }
+
+  const dateErrors = getSessionDateErrors(sessionForm);
 
   async function handleSaveSession() {
     setIsSubmitting(true);
@@ -139,6 +174,11 @@ export function SecretaryHomePage() {
           </div>
         </div>
 
+        <p className="hero-copy">
+          La finestra di pianificazione, in cui i docenti inseriscono gli appelli,
+          deve terminare prima dell'inizio della sessione esami.
+        </p>
+
         <div className="session-config-grid">
           <div className="session-config-group">
             <h3>Sessione esami</h3>
@@ -148,6 +188,8 @@ export function SecretaryHomePage() {
                 <input
                   type="date"
                   value={sessionForm.sessionStart}
+                  min={shiftDate(sessionForm.planningEnd, 1) || undefined}
+                  max={sessionForm.sessionEnd || undefined}
                   onChange={(event) =>
                     updateSessionField('sessionStart', event.target.value)
                   }
@@ -159,6 +201,7 @@ export function SecretaryHomePage() {
                 <input
                   type="date"
                   value={sessionForm.sessionEnd}
+                  min={sessionForm.sessionStart || undefined}
                   onChange={(event) =>
                     updateSessionField('sessionEnd', event.target.value)
                   }
@@ -175,6 +218,7 @@ export function SecretaryHomePage() {
                 <input
                   type="date"
                   value={sessionForm.planningStart}
+                  max={sessionForm.planningEnd || undefined}
                   onChange={(event) =>
                     updateSessionField('planningStart', event.target.value)
                   }
@@ -186,6 +230,8 @@ export function SecretaryHomePage() {
                 <input
                   type="date"
                   value={sessionForm.planningEnd}
+                  min={sessionForm.planningStart || undefined}
+                  max={shiftDate(sessionForm.sessionStart, -1) || undefined}
                   onChange={(event) =>
                     updateSessionField('planningEnd', event.target.value)
                   }
@@ -194,6 +240,14 @@ export function SecretaryHomePage() {
             </div>
           </div>
         </div>
+
+        {dateErrors.length > 0 ? (
+          <ul className="alert error field-errors">
+            {dateErrors.map((dateError) => (
+              <li key={dateError}>{dateError}</li>
+            ))}
+          </ul>
+        ) : null}
 
         <label className="holiday-field">
           Festivita escluse opzionali
@@ -212,7 +266,7 @@ export function SecretaryHomePage() {
           type="button"
           className="primary session-save"
           onClick={() => void handleSaveSession()}
-          disabled={isSubmitting}
+          disabled={isSubmitting || dateErrors.length > 0}
         >
           {hasCurrentSession
             ? 'Salva configurazione sessione'
