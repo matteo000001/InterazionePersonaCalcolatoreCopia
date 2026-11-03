@@ -16,7 +16,13 @@ import {
   getStoredDegreeProgramYears,
 } from './secretary-dashboard.types';
 
-export function SecretaryDegreeProgramsPage() {
+type SecretaryDegreeProgramsPageProps = {
+  onDirtyChange?: (dirty: boolean) => void;
+};
+
+export function SecretaryDegreeProgramsPage({
+  onDirtyChange,
+}: SecretaryDegreeProgramsPageProps) {
   const [degreePrograms, setDegreePrograms] = useState<DegreeProgram[]>([]);
   const [degreeProgramForm, setDegreeProgramForm] =
     useState<DegreeProgramFormState>(defaultDegreeProgramForm);
@@ -45,6 +51,13 @@ export function SecretaryDegreeProgramsPage() {
 
     void loadDegreePrograms();
   }, []);
+
+  const isFormDirty =
+    JSON.stringify(degreeProgramForm) !== JSON.stringify(defaultDegreeProgramForm);
+
+  useEffect(() => {
+    onDirtyChange?.(isFormDirty);
+  }, [isFormDirty, onDirtyChange]);
 
   function updateDegreeProgramFormField<K extends keyof DegreeProgramFormState>(
     field: K,

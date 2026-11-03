@@ -18,6 +18,7 @@ export function SecretaryDashboard() {
     useState<SecretaryMenuItem>('home');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
 
   useEffect(() => {
     async function loadCurrentUser() {
@@ -37,24 +38,48 @@ export function SecretaryDashboard() {
     void loadCurrentUser();
   }, [token]);
 
+  // Chiede conferma prima di abbandonare un modulo compilato e non salvato.
+  function confirmLeaveForm() {
+    return (
+      !hasUnsavedChanges ||
+      window.confirm(
+        'Ci sono dati inseriti nel modulo e non ancora salvati. Se esci da questa sezione andranno persi. Vuoi continuare?'
+      )
+    );
+  }
+
+  function selectMenuItem(menuItem: SecretaryMenuItem) {
+    if (menuItem === selectedMenuItem || !confirmLeaveForm()) {
+      return;
+    }
+
+    setHasUnsavedChanges(false);
+    setSelectedMenuItem(menuItem);
+  }
+
   function renderSelectedPage() {
     if (selectedMenuItem === 'home') {
       return <SecretaryHomePage />;
     }
 
     if (selectedMenuItem === 'users') {
-      return <SecretaryUsersPage currentUserId={user?.id} />;
+      return (
+        <SecretaryUsersPage
+          currentUserId={user?.id}
+          onDirtyChange={setHasUnsavedChanges}
+        />
+      );
     }
 
     if (selectedMenuItem === 'subjects') {
-      return <SecretarySubjectsPage />;
+      return <SecretarySubjectsPage onDirtyChange={setHasUnsavedChanges} />;
     }
 
     if (selectedMenuItem === 'appointments') {
       return <SecretaryAppointmentsSearchPage />;
     }
 
-    return <SecretaryDegreeProgramsPage />;
+    return <SecretaryDegreeProgramsPage onDirtyChange={setHasUnsavedChanges} />;
   }
 
   if (loading) {
@@ -78,21 +103,21 @@ export function SecretaryDashboard() {
             <button
               type="button"
               className={selectedMenuItem === 'home' ? 'primary' : 'secondary'}
-              onClick={() => setSelectedMenuItem('home')}
+              onClick={() => selectMenuItem('home')}
             >
               Pagina iniziale
             </button>
             <button
               type="button"
               className={selectedMenuItem === 'users' ? 'primary' : 'secondary'}
-              onClick={() => setSelectedMenuItem('users')}
+              onClick={() => selectMenuItem('users')}
             >
               Utenti
             </button>
             <button
               type="button"
               className={selectedMenuItem === 'subjects' ? 'primary' : 'secondary'}
-              onClick={() => setSelectedMenuItem('subjects')}
+              onClick={() => selectMenuItem('subjects')}
             >
               Materie
             </button>
@@ -101,7 +126,7 @@ export function SecretaryDashboard() {
               className={
                 selectedMenuItem === 'degree-programs' ? 'primary' : 'secondary'
               }
-              onClick={() => setSelectedMenuItem('degree-programs')}
+              onClick={() => selectMenuItem('degree-programs')}
             >
               Corsi di laurea
             </button>
@@ -110,7 +135,7 @@ export function SecretaryDashboard() {
               className={
                 selectedMenuItem === 'appointments' ? 'primary' : 'secondary'
               }
-              onClick={() => setSelectedMenuItem('appointments')}
+              onClick={() => selectMenuItem('appointments')}
             >
               Visualizza appelli
             </button>
@@ -119,7 +144,11 @@ export function SecretaryDashboard() {
           <button
             type="button"
             className="secondary"
-            onClick={() => navigate('/logout')}
+            onClick={() => {
+              if (confirmLeaveForm()) {
+                navigate('/logout');
+              }
+            }}
           >
             Esci
           </button>

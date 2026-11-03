@@ -11,12 +11,18 @@ import { defaultUserForm, UserFormState } from './secretary-dashboard.types';
 
 type SecretaryUsersPageProps = {
   currentUserId?: number;
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
-export function SecretaryUsersPage({ currentUserId }: SecretaryUsersPageProps) {
+export function SecretaryUsersPage({
+  currentUserId,
+  onDirtyChange,
+}: SecretaryUsersPageProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [degreePrograms, setDegreePrograms] = useState<DegreeProgram[]>([]);
   const [userForm, setUserForm] = useState<UserFormState>(defaultUserForm);
+  const [savedUserForm, setSavedUserForm] =
+    useState<UserFormState>(defaultUserForm);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -45,6 +51,12 @@ export function SecretaryUsersPage({ currentUserId }: SecretaryUsersPageProps) {
     void loadUsersPage();
   }, []);
 
+  const isFormDirty = JSON.stringify(userForm) !== JSON.stringify(savedUserForm);
+
+  useEffect(() => {
+    onDirtyChange?.(isFormDirty);
+  }, [isFormDirty, onDirtyChange]);
+
   function updateUserFormField<K extends keyof UserFormState>(
     field: K,
     value: UserFormState[K]
@@ -72,19 +84,22 @@ export function SecretaryUsersPage({ currentUserId }: SecretaryUsersPageProps) {
   }
 
   function startEditUser(selectedUser: User) {
-    setEditingUserId(selectedUser.id);
-    setUserForm({
+    const formFromUser: UserFormState = {
       name: selectedUser.name,
       email: selectedUser.email,
       password: '',
       role: selectedUser.role,
       managedDegreeProgramIds: selectedUser.managedDegreeProgramIds ?? [],
-    });
+    };
+    setEditingUserId(selectedUser.id);
+    setUserForm(formFromUser);
+    setSavedUserForm(formFromUser);
   }
 
   function resetUserForm() {
     setEditingUserId(null);
     setUserForm(defaultUserForm);
+    setSavedUserForm(defaultUserForm);
   }
 
   async function handleSaveUser() {

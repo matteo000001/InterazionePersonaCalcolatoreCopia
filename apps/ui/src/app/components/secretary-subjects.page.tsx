@@ -22,12 +22,20 @@ import {
   SubjectFormState,
 } from './secretary-dashboard.types';
 
-export function SecretarySubjectsPage() {
+type SecretarySubjectsPageProps = {
+  onDirtyChange?: (dirty: boolean) => void;
+};
+
+export function SecretarySubjectsPage({
+  onDirtyChange,
+}: SecretarySubjectsPageProps) {
   const [users, setUsers] = useState<User[]>([]);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [degreePrograms, setDegreePrograms] = useState<DegreeProgram[]>([]);
   const [courseYears, setCourseYears] = useState<CourseYear[]>([]);
   const [subjectForm, setSubjectForm] =
+    useState<SubjectFormState>(defaultSubjectForm);
+  const [savedSubjectForm, setSavedSubjectForm] =
     useState<SubjectFormState>(defaultSubjectForm);
   const [editingSubjectId, setEditingSubjectId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,6 +74,13 @@ export function SecretarySubjectsPage() {
 
     void loadSubjectsPage();
   }, []);
+
+  const isFormDirty =
+    JSON.stringify(subjectForm) !== JSON.stringify(savedSubjectForm);
+
+  useEffect(() => {
+    onDirtyChange?.(isFormDirty);
+  }, [isFormDirty, onDirtyChange]);
 
   function updateSubjectFormField<K extends keyof SubjectFormState>(
     field: K,
@@ -108,18 +123,21 @@ export function SecretarySubjectsPage() {
   }
 
   function startEditSubject(selectedSubject: Subject) {
-    setEditingSubjectId(selectedSubject.id);
-    setSubjectForm({
+    const formFromSubject: SubjectFormState = {
       name: selectedSubject.name,
       teacherId: selectedSubject.teacherId,
       degreeProgramIds: selectedSubject.degreeProgramIds ?? [],
       courseYearId: selectedSubject.courseYearId,
-    });
+    };
+    setEditingSubjectId(selectedSubject.id);
+    setSubjectForm(formFromSubject);
+    setSavedSubjectForm(formFromSubject);
   }
 
   function resetSubjectForm() {
     setEditingSubjectId(null);
     setSubjectForm(defaultSubjectForm);
+    setSavedSubjectForm(defaultSubjectForm);
   }
 
   async function handleSaveSubject() {
