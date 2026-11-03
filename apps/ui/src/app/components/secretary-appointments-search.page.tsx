@@ -30,6 +30,7 @@ export function SecretaryAppointmentsSearchPage() {
   const [appointmentResults, setAppointmentResults] = useState<
     ExamAppointment[]
   >([]);
+  const [hasSearched, setHasSearched] = useState(false);
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -81,9 +82,9 @@ export function SecretaryAppointmentsSearchPage() {
       ...(field === 'teacherId' ? { subjectId: '' as const } : {}),
     }));
 
-    if (isPrimaryFilter) {
-      setAppointmentResults([]);
-    }
+    // Qualsiasi cambio di filtro rende vecchi i risultati mostrati.
+    setAppointmentResults([]);
+    setHasSearched(false);
   }
 
   async function handleSearchAppointments() {
@@ -111,6 +112,7 @@ export function SecretaryAppointmentsSearchPage() {
       });
 
       setAppointmentResults(filteredAppointments);
+      setHasSearched(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Ricerca non riuscita');
     } finally {
@@ -321,7 +323,9 @@ export function SecretaryAppointmentsSearchPage() {
               })
             ) : (
               <p className="empty-state">
-                Nessun appello trovato per la ricerca selezionata.
+                {hasSearched
+                  ? 'Nessun appello trovato per la ricerca selezionata.'
+                  : 'Imposta i filtri e premi «Avvia ricerca» per vedere gli appelli.'}
               </p>
             )}
           </div>
