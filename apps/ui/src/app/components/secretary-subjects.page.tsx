@@ -21,6 +21,7 @@ import {
   getSubjectMaxCourseYear,
   SubjectFormState,
 } from './secretary-dashboard.types';
+import { compareText, ListToolbar, matchesSearch } from './list-toolbar';
 
 type SecretarySubjectsPageProps = {
   onDirtyChange?: (dirty: boolean) => void;
@@ -38,6 +39,9 @@ export function SecretarySubjectsPage({
   const [savedSubjectForm, setSavedSubjectForm] =
     useState<SubjectFormState>(defaultSubjectForm);
   const [editingSubjectId, setEditingSubjectId] = useState<number | null>(null);
+  const [subjectSearch, setSubjectSearch] = useState('');
+  const [subjectProgramFilter, setSubjectProgramFilter] = useState('');
+  const [subjectSort, setSubjectSort] = useState('name');
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -216,6 +220,22 @@ export function SecretarySubjectsPage({
       ? []
       : courseYears.filter((year) => year.year <= subjectMaxCourseYear);
 
+  const teacherNameOf = (teacherId: number) =>
+    users.find((currentUser) => currentUser.id === teacherId)?.name ?? '';
+  const visibleSubjects = subjects
+    .filter(
+      (subject) =>
+        (subjectProgramFilter === '' ||
+          subject.degreeProgramIds.includes(subjectProgramFilter)) &&
+        matchesSearch(subjectSearch, subject.name, teacherNameOf(subject.teacherId))
+    )
+    .sort((first, second) =>
+      subjectSort === 'teacher'
+        ? compareText(teacherNameOf(first.teacherId), teacherNameOf(second.teacherId)) ||
+          compareText(first.name, second.name)
+        : compareText(first.name, second.name)
+    );
+
   if (loading) {
     return <section className="dashboard-grid secretary-layout">Caricamento materie...</section>;
   }
@@ -342,8 +362,38 @@ export function SecretarySubjectsPage({
             </div>
           </div>
 
+          <ListToolbar
+            search={subjectSearch}
+            onSearchChange={setSubjectSearch}
+            searchPlaceholder="Materia o docente"
+            sort={subjectSort}
+            onSortChange={setSubjectSort}
+            sortOptions={[
+              { value: 'name', label: 'Nome materia' },
+              { value: 'teacher', label: 'Docente' },
+            ]}
+          >
+            <label>
+              Corso di laurea
+              <select
+                value={subjectProgramFilter}
+                onChange={(event) => setSubjectProgramFilter(event.target.value)}
+              >
+                <option value="">Tutti i corsi</option>
+                {degreePrograms.map((program) => (
+                  <option key={program.id} value={program.id}>
+                    {program.code} - {program.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </ListToolbar>
+
           <div className="panel-section">
-            {subjects.map((subject) => {
+            {subjects.length > 0 && visibleSubjects.length === 0 ? (
+              <p className="empty-state">Nessuna materia corrisponde ai filtri.</p>
+            ) : null}
+            {visibleSubjects.map((subject) => {
               const teacher = users.find(
                 (currentUser) => currentUser.id === subject.teacherId
               );

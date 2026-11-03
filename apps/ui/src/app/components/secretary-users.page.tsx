@@ -8,6 +8,7 @@ import {
   updateSecretaryUser,
 } from './secretary.api';
 import { defaultUserForm, UserFormState } from './secretary-dashboard.types';
+import { compareText, ListToolbar, matchesSearch } from './list-toolbar';
 
 type SecretaryUsersPageProps = {
   currentUserId?: number;
@@ -24,6 +25,9 @@ export function SecretaryUsersPage({
   const [savedUserForm, setSavedUserForm] =
     useState<UserFormState>(defaultUserForm);
   const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [userSearch, setUserSearch] = useState('');
+  const [userRoleFilter, setUserRoleFilter] = useState<UserRole | ''>('');
+  const [userSort, setUserSort] = useState('name-asc');
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -158,6 +162,18 @@ export function SecretaryUsersPage({
     }
   }
 
+  const visibleUsers = users
+    .filter(
+      (currentUser) =>
+        (userRoleFilter === '' || currentUser.role === userRoleFilter) &&
+        matchesSearch(userSearch, currentUser.name, currentUser.email)
+    )
+    .sort((first, second) =>
+      userSort === 'name-desc'
+        ? compareText(second.name, first.name)
+        : compareText(first.name, second.name)
+    );
+
   if (loading) {
     return <section className="dashboard-grid secretary-layout">Caricamento utenti...</section>;
   }
@@ -282,8 +298,37 @@ export function SecretaryUsersPage({
             </div>
           </div>
 
+          <ListToolbar
+            search={userSearch}
+            onSearchChange={setUserSearch}
+            searchPlaceholder="Nome o e-mail"
+            sort={userSort}
+            onSortChange={setUserSort}
+            sortOptions={[
+              { value: 'name-asc', label: 'Nome (A-Z)' },
+              { value: 'name-desc', label: 'Nome (Z-A)' },
+            ]}
+          >
+            <label>
+              Ruolo
+              <select
+                value={userRoleFilter}
+                onChange={(event) =>
+                  setUserRoleFilter(event.target.value as UserRole | '')
+                }
+              >
+                <option value="">Tutti i ruoli</option>
+                <option value={UserRole.TEACHER}>Docenti</option>
+                <option value={UserRole.SECRETARY}>Segreteria</option>
+              </select>
+            </label>
+          </ListToolbar>
+
           <div className="panel-section">
-            {users.map((currentUser) => (
+            {users.length > 0 && visibleUsers.length === 0 ? (
+              <p className="empty-state">Nessun utente corrisponde ai filtri.</p>
+            ) : null}
+            {visibleUsers.map((currentUser) => (
               <div className="summary-row" key={currentUser.id}>
                 <span>
                   {currentUser.name}

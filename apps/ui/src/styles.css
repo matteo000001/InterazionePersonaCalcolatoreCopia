@@ -610,3 +610,14 @@ button.compact-appointment.is-current {
   margin: 0;
   padding-left: 32px;
 }
+
+.list-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.list-toolbar label {
+  flex: 1 1 160px;
+}

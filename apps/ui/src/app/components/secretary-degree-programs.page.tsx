@@ -15,6 +15,7 @@ import {
   getDegreeProgramTypeLabel,
   getStoredDegreeProgramYears,
 } from './secretary-dashboard.types';
+import { compareText, ListToolbar, matchesSearch } from './list-toolbar';
 
 type SecretaryDegreeProgramsPageProps = {
   onDirtyChange?: (dirty: boolean) => void;
@@ -29,6 +30,8 @@ export function SecretaryDegreeProgramsPage({
   const [degreeProgramYears, setDegreeProgramYears] = useState<
     Record<string, DegreeProgramYearCount>
   >(() => getStoredDegreeProgramYears());
+  const [programSearch, setProgramSearch] = useState('');
+  const [programSort, setProgramSort] = useState('name');
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -162,6 +165,16 @@ export function SecretaryDegreeProgramsPage({
     (_item, index) => index + 1
   );
 
+  const visibleDegreePrograms = degreePrograms
+    .filter((program) =>
+      matchesSearch(programSearch, program.code, program.name, program.id)
+    )
+    .sort((first, second) =>
+      programSort === 'code'
+        ? compareText(first.code, second.code)
+        : compareText(first.name, second.name)
+    );
+
   if (loading) {
     return <section className="dashboard-grid secretary-layout">Caricamento corsi...</section>;
   }
@@ -274,8 +287,23 @@ export function SecretaryDegreeProgramsPage({
             </div>
           </div>
 
+          <ListToolbar
+            search={programSearch}
+            onSearchChange={setProgramSearch}
+            searchPlaceholder="Codice, nome o identificativo"
+            sort={programSort}
+            onSortChange={setProgramSort}
+            sortOptions={[
+              { value: 'name', label: 'Nome' },
+              { value: 'code', label: 'Codice' },
+            ]}
+          />
+
           <div className="panel-section">
-            {degreePrograms.map((program) => (
+            {degreePrograms.length > 0 && visibleDegreePrograms.length === 0 ? (
+              <p className="empty-state">Nessun corso corrisponde alla ricerca.</p>
+            ) : null}
+            {visibleDegreePrograms.map((program) => (
               <div className="summary-row" key={program.id}>
                 <span>
                   {program.code}
