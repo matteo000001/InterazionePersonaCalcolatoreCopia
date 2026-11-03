@@ -210,6 +210,8 @@ export function SecretarySubjectsPage({
         selectedSubjectTeacher.managedDegreeProgramIds?.includes(program.id)
       )
     : degreePrograms;
+  const selectedTeacherHasNoPrograms =
+    Boolean(selectedSubjectTeacher) && subjectDegreeProgramOptions.length === 0;
   const subjectMaxCourseYear = getSubjectMaxCourseYear(
     subjectForm.degreeProgramIds,
     courseYears,
@@ -294,6 +296,14 @@ export function SecretarySubjectsPage({
             </label>
           </div>
 
+          {selectedTeacherHasNoPrograms ? (
+            <div className="alert error">
+              {selectedSubjectTeacher?.name} non ha corsi di laurea assegnati, quindi
+              non e possibile associargli una materia. Assegna prima i corsi al
+              docente nella sezione «Utenti» (Modifica &gt; Corsi gestiti).
+            </div>
+          ) : null}
+
           <label>
             Corsi di laurea
             <select
@@ -337,7 +347,7 @@ export function SecretarySubjectsPage({
             <button
               type="submit"
               className="primary"
-              disabled={isSubmitting}
+              disabled={isSubmitting || selectedTeacherHasNoPrograms}
             >
               {editingSubjectId ? 'Salva modifiche' : 'Aggiungi materia'}
             </button>
