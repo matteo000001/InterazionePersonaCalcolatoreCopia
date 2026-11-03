@@ -5,6 +5,7 @@ import {defaultSessionForm,SessionFormState,} from './secretary-dashboard.types'
 export function SecretaryHomePage() {
   const [sessionForm, setSessionForm] =
     useState<SessionFormState>(defaultSessionForm);
+  const [holidayInput, setHolidayInput] = useState('');
   const [hasCurrentSession, setHasCurrentSession] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -28,9 +29,11 @@ export function SecretaryHomePage() {
           planningEnd: currentSession.planningEnd,
           excludedHolidayDates: currentSession.excludedHolidayDates,
         });
+        setHolidayInput(currentSession.excludedHolidayDates.join(', '));
         setHasCurrentSession(true);
       } else {
         setSessionForm(defaultSessionForm);
+        setHolidayInput('');
         setHasCurrentSession(false);
       }
     } catch (err) {
@@ -78,6 +81,7 @@ export function SecretaryHomePage() {
         planningEnd: updatedSession.planningEnd,
         excludedHolidayDates: updatedSession.excludedHolidayDates,
       });
+      setHolidayInput(updatedSession.excludedHolidayDates.join(', '));
       setHasCurrentSession(true);
       setSuccessMessage(
         hasCurrentSession
@@ -195,10 +199,11 @@ export function SecretaryHomePage() {
           Festivita escluse opzionali
           <input
             type="text"
-            value={sessionForm.excludedHolidayDates.join(', ')}
-            onChange={(event) =>
-              updateSessionField('excludedHolidayDates', event.target.value)
-            }
+            value={holidayInput}
+            onChange={(event) => {
+              setHolidayInput(event.target.value);
+              updateSessionField('excludedHolidayDates', event.target.value);
+            }}
             placeholder="2026-04-25, 2026-05-01"
           />
         </label>
