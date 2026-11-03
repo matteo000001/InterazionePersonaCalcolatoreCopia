@@ -287,6 +287,20 @@ export function TeacherDashboard() {
             </div>
           </div>
 
+          {visibleDegreePrograms.length === 0 ? (
+            <div className="calendar-empty no-programs-notice">
+              <div>
+                <strong>Non hai ancora corsi di laurea assegnati.</strong>
+                <p>
+                  Per pianificare gli appelli la segreteria didattica deve
+                  assegnarti almeno un corso di laurea e le relative materie.
+                  Contatta la segreteria indicando il tuo nome e l'email con cui
+                  accedi ({user.email}).
+                </p>
+              </div>
+            </div>
+          ) : (
+          <>
           <div className="filters">
             <label>
               Corso di laurea
@@ -352,6 +366,8 @@ export function TeacherDashboard() {
               setNotes(ownAppointment?.notes ?? '');
             }}
           />
+          </>
+          )}
         </div>
 
         <aside className="panel side-panel">
@@ -550,8 +566,9 @@ export function TeacherDashboard() {
             </>
           ) : (
             <p className="empty-state">
-              Scegli un giorno dal calendario per vedere appelli presenti e azioni
-              disponibili.
+              {visibleDegreePrograms.length === 0
+                ? 'Il dettaglio delle giornate sara disponibile dopo che la segreteria ti avra assegnato un corso di laurea.'
+                : 'Scegli un giorno dal calendario per vedere appelli presenti e azioni disponibili.'}
             </p>
           )}
         </aside>

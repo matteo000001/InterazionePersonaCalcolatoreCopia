@@ -426,6 +426,15 @@ button:disabled {
   padding: 24px;
 }
 
+.no-programs-notice strong {
+  color: var(--text);
+}
+
+.no-programs-notice p {
+  margin: 8px 0 0;
+  max-width: 52ch;
+}
+
 .day-card {
   display: grid;
   gap: 8px;
