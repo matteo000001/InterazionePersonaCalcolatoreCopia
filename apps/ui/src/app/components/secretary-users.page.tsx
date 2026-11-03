@@ -61,12 +61,11 @@ export function SecretaryUsersPage({
     field: K,
     value: UserFormState[K]
   ) {
+    // Cambiando ruolo i corsi selezionati restano in memoria (il campo viene solo
+    // nascosto) e non vengono inviati se l'utente e di segreteria: vedi handleSaveUser.
     setUserForm((current) => ({
       ...current,
       [field]: value,
-      ...(field === 'role' && value === UserRole.SECRETARY
-        ? { managedDegreeProgramIds: [] }
-        : {}),
     }));
   }
 
