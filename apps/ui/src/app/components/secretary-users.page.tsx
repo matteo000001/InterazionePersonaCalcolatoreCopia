@@ -325,6 +325,11 @@ export function SecretaryUsersPage({
           </ListToolbar>
 
           <div className="panel-section">
+            {users.length === 0 ? (
+              <p className="empty-state">
+                Nessun utente inserito. Usa il modulo «Nuovo utente» per aggiungerne uno.
+              </p>
+            ) : null}
             {users.length > 0 && visibleUsers.length === 0 ? (
               <p className="empty-state">Nessun utente corrisponde ai filtri.</p>
             ) : null}

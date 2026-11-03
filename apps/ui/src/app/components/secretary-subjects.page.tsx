@@ -390,6 +390,12 @@ export function SecretarySubjectsPage({
           </ListToolbar>
 
           <div className="panel-section">
+            {subjects.length === 0 ? (
+              <p className="empty-state">
+                Nessuna materia inserita. Usa il modulo «Nuova materia» per
+                aggiungerne una.
+              </p>
+            ) : null}
             {subjects.length > 0 && visibleSubjects.length === 0 ? (
               <p className="empty-state">Nessuna materia corrisponde ai filtri.</p>
             ) : null}

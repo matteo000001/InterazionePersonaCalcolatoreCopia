@@ -300,6 +300,12 @@ export function SecretaryDegreeProgramsPage({
           />
 
           <div className="panel-section">
+            {degreePrograms.length === 0 ? (
+              <p className="empty-state">
+                Nessun corso di laurea inserito. Usa il modulo «Nuovo corso di laurea»
+                per aggiungerne uno.
+              </p>
+            ) : null}
             {degreePrograms.length > 0 && visibleDegreePrograms.length === 0 ? (
               <p className="empty-state">Nessun corso corrisponde alla ricerca.</p>
             ) : null}

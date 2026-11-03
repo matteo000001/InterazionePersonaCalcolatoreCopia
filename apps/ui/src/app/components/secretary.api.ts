@@ -192,6 +192,11 @@ export async function fetchSecretaryDegreePrograms(): Promise<DegreeProgram[]> {
     headers: getAuthHeaders(),
   });
 
+  // Il backend risponde 404 quando non esiste ancora alcun corso: e un elenco vuoto.
+  if (response.status === 404) {
+    return [];
+  }
+
   if (!response.ok) {
     await handleApiError(response);
   }
@@ -230,6 +235,11 @@ export async function fetchSecretaryCourseYears(): Promise<CourseYear[]> {
   const response = await fetch(`${API_URL}/course-years`, {
     headers: getAuthHeaders(),
   });
+
+  // Il backend risponde 404 quando non esiste ancora alcun anno: e un elenco vuoto.
+  if (response.status === 404) {
+    return [];
+  }
 
   if (!response.ok) {
     await handleApiError(response);
