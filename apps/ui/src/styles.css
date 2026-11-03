@@ -554,6 +554,19 @@ button:disabled {
   color: var(--muted);
 }
 
+button.compact-appointment {
+  width: 100%;
+  text-align: left;
+  background: transparent;
+}
+
+button.compact-appointment:hover,
+button.compact-appointment.is-current {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: rgba(15, 76, 129, 0.06);
+}
+
 .summary-row {
   padding: 12px 0;
   border-bottom: 1px solid var(--line);

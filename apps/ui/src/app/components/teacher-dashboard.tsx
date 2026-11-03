@@ -199,6 +199,17 @@ export function TeacherDashboard() {
     setSelectedCourseYearId(subject.courseYearId);
   }
 
+  function selectDay(date: string) {
+    setSelectedDate(date);
+    setMoveTargetDate('');
+    const ownAppointment =
+      availability
+        .find((day) => day.date === date)
+        ?.appointments.find((appointment) => appointment.teacherId === user?.id) ??
+      appointments.find((appointment) => appointment.teacherId === user?.id);
+    setNotes(ownAppointment?.notes ?? '');
+  }
+
   function selectDegreeProgram(degreeProgramId: string) {
     setSelectedDegreeProgramId(degreeProgramId);
     setSelectedSubjectId('');
@@ -355,16 +366,7 @@ export function TeacherDashboard() {
           <AvailabilityCalendar
             days={availability}
             selectedDate={selectedDate}
-            onSelect={(date) => {
-              setSelectedDate(date);
-              setMoveTargetDate('');
-              const ownAppointment =
-                availability
-                  .find((day) => day.date === date)
-                  ?.appointments.find((appointment) => appointment.teacherId === user.id) ??
-                appointments.find((appointment) => appointment.teacherId === user.id);
-              setNotes(ownAppointment?.notes ?? '');
-            }}
+            onSelect={selectDay}
           />
           </>
           )}
@@ -554,10 +556,18 @@ export function TeacherDashboard() {
                 <h4>I tuoi appelli</h4>
                 {ownAppointments.length > 0 ? (
                   ownAppointments.map((appointment) => (
-                    <div className="compact-appointment" key={appointment.id}>
+                    <button
+                      type="button"
+                      className={`compact-appointment ${
+                        appointment.examDate === selectedDate ? 'is-current' : ''
+                      }`}
+                      key={appointment.id}
+                      onClick={() => selectDay(appointment.examDate)}
+                      title="Apri questa giornata per modificare l'appello"
+                    >
                       <span>{appointment.examDate}</span>
                       <span>{appointment.notes || 'Nessuna nota'}</span>
-                    </div>
+                    </button>
                   ))
                 ) : (
                   <p className="empty-state">Non hai ancora inserito appelli.</p>
