@@ -42,6 +42,7 @@ export function TeacherDashboard() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | ''>('');
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const [notes, setNotes] = useState('');
+  const [moveTargetDate, setMoveTargetDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -63,6 +64,7 @@ export function TeacherDashboard() {
   const ownAppointments = user
     ? appointments.filter((appointment) => appointment.teacherId === user.id)
     : [];
+  const moveTargetDays = availability.filter((day) => day.isSelectable);
 
   useEffect(() => {
     async function loadPage() {
@@ -341,6 +343,7 @@ export function TeacherDashboard() {
             selectedDate={selectedDate}
             onSelect={(date) => {
               setSelectedDate(date);
+              setMoveTargetDate('');
               const ownAppointment =
                 availability
                   .find((day) => day.date === date)
@@ -410,6 +413,50 @@ export function TeacherDashboard() {
                             disabled={isSubmitting}
                           >
                             Elimina
+                          </button>
+                        </div>
+                      ) : null}
+                      {appointment.teacherId === user.id ? (
+                        <div className="move-appointment">
+                          <label className="compact-field">
+                            Sposta a
+                            <select
+                              value={moveTargetDate}
+                              onChange={(event) => setMoveTargetDate(event.target.value)}
+                              disabled={isSubmitting || moveTargetDays.length === 0}
+                            >
+                              <option value="">
+                                {moveTargetDays.length > 0
+                                  ? 'Scegli una data libera'
+                                  : 'Nessuna data libera disponibile'}
+                              </option>
+                              {moveTargetDays.map((day) => (
+                                <option key={day.date} value={day.date}>
+                                  {day.date}
+                                </option>
+                              ))}
+                            </select>
+                          </label>
+                          <button
+                            type="button"
+                            className="secondary"
+                            onClick={() =>
+                              void handleMutation(async () => {
+                                if (!moveTargetDate) {
+                                  throw new Error('Scegli la nuova data dell\'appello');
+                                }
+
+                                await updateTeacherAppointment(appointment.id, {
+                                  examDate: moveTargetDate,
+                                });
+                                await refreshTeacherData();
+                                setSelectedDate(moveTargetDate);
+                                setMoveTargetDate('');
+                              }, `Appello spostato al ${moveTargetDate}, note mantenute`)
+                            }
+                            disabled={isSubmitting || !moveTargetDate}
+                          >
+                            Sposta appello
                           </button>
                         </div>
                       ) : null}
