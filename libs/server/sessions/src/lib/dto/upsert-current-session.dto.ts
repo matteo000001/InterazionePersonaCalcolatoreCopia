@@ -10,30 +10,54 @@ import {
   ValidatorConstraintInterface,
 } from 'class-validator';
 
-@ValidatorConstraint({ name: 'sessionWindowOrder', async: false })
-class SessionWindowOrderValidator implements ValidatorConstraintInterface {
+// Ogni regola ha il proprio messaggio, cosi l'utente sa quale periodo correggere.
+// Le regole si applicano solo quando entrambe le date sono presenti nel corpo.
+@ValidatorConstraint({ name: 'sessionEndAfterStart', async: false })
+class SessionEndAfterStartValidator implements ValidatorConstraintInterface {
+  validate(_value: string, args?: ValidationArguments) {
+    const dto = args?.object as UpsertCurrentSessionDto;
+    return !dto.sessionStart || !dto.sessionEnd || dto.sessionStart <= dto.sessionEnd;
+  }
+
+  defaultMessage() {
+    return "La fine della sessione d'esami deve essere uguale o successiva all'inizio";
+  }
+}
+
+@ValidatorConstraint({ name: 'planningEndAfterStart', async: false })
+class PlanningEndAfterStartValidator implements ValidatorConstraintInterface {
   validate(_value: string, args?: ValidationArguments) {
     const dto = args?.object as UpsertCurrentSessionDto;
     return (
-      dto.sessionStart <= dto.sessionEnd &&
-      dto.planningStart <= dto.planningEnd &&
-      dto.planningEnd < dto.sessionStart
+      !dto.planningStart || !dto.planningEnd || dto.planningStart <= dto.planningEnd
     );
   }
 
   defaultMessage() {
-    return 'The planning period must end before the exam session starts';
+    return "La fine della pianificazione deve essere uguale o successiva all'inizio";
+  }
+}
+
+@ValidatorConstraint({ name: 'planningBeforeSession', async: false })
+class PlanningBeforeSessionValidator implements ValidatorConstraintInterface {
+  validate(_value: string, args?: ValidationArguments) {
+    const dto = args?.object as UpsertCurrentSessionDto;
+    return !dto.planningEnd || !dto.sessionStart || dto.planningEnd < dto.sessionStart;
+  }
+
+  defaultMessage() {
+    return "La finestra di pianificazione deve terminare prima dell'inizio della sessione d'esami";
   }
 }
 
 export class UpsertCurrentSessionDto {
   @ApiProperty()
   @IsDateString()
-  @Validate(SessionWindowOrderValidator)
   sessionStart!: string;
 
   @ApiProperty()
   @IsDateString()
+  @Validate(SessionEndAfterStartValidator)
   sessionEnd!: string;
 
   @ApiProperty()
@@ -42,6 +66,8 @@ export class UpsertCurrentSessionDto {
 
   @ApiProperty()
   @IsDateString()
+  @Validate(PlanningEndAfterStartValidator)
+  @Validate(PlanningBeforeSessionValidator)
   planningEnd!: string;
 
   @ApiProperty({
