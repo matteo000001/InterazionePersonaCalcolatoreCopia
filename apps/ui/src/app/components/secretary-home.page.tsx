@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import {createCurrentSession,fetchCurrentSession,saveCurrentSession,} from './secretary.api';
+import {createCurrentSession,fetchCurrentSessionIfExists,saveCurrentSession,} from './secretary.api';
 import {defaultSessionForm,SessionFormState,} from './secretary-dashboard.types';
 
 export function SecretaryHomePage() {
@@ -7,17 +7,20 @@ export function SecretaryHomePage() {
     useState<SessionFormState>(defaultSessionForm);
   const [hasCurrentSession, setHasCurrentSession] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadCurrentSession() {
-      setLoading(true);
-      setError(null);
+  async function loadCurrentSession() {
+    setLoading(true);
+    setLoadError(null);
+    setError(null);
 
-      try {
-        const currentSession = await fetchCurrentSession();
+    try {
+      const currentSession = await fetchCurrentSessionIfExists();
+
+      if (currentSession) {
         setSessionForm({
           sessionStart: currentSession.sessionStart,
           sessionEnd: currentSession.sessionEnd,
@@ -26,14 +29,22 @@ export function SecretaryHomePage() {
           excludedHolidayDates: currentSession.excludedHolidayDates,
         });
         setHasCurrentSession(true);
-      } catch {
+      } else {
         setSessionForm(defaultSessionForm);
         setHasCurrentSession(false);
-      } finally {
-        setLoading(false);
       }
+    } catch (err) {
+      setLoadError(
+        err instanceof Error && err.message !== 'Failed to fetch'
+          ? err.message
+          : 'Il server non risponde'
+      );
+    } finally {
+      setLoading(false);
     }
+  }
 
+  useEffect(() => {
     void loadCurrentSession();
   }, []);
 
@@ -82,6 +93,33 @@ export function SecretaryHomePage() {
 
   if (loading) {
     return <section className="session-home">Caricamento sessione...</section>;
+  }
+
+  if (loadError) {
+    return (
+      <section className="session-home">
+        <div className="panel session-panel">
+          <div className="panel__header">
+            <div>
+              <p className="eyebrow">Pannello segreteria</p>
+              <h2>Configurazione sessione</h2>
+            </div>
+          </div>
+          <div className="alert error">
+            Non e stato possibile leggere la configurazione della sessione corrente
+            ({loadError}). La configurazione salvata non e stata cancellata: riprova
+            prima di modificarla o di crearne una nuova.
+          </div>
+          <button
+            type="button"
+            className="primary session-save"
+            onClick={() => void loadCurrentSession()}
+          >
+            Riprova
+          </button>
+        </div>
+      </section>
+    );
   }
 
   return (

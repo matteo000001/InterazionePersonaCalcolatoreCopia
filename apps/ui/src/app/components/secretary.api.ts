@@ -250,6 +250,23 @@ export async function fetchCurrentSession(): Promise<ExamSession> {
   return response.json();
 }
 
+// Restituisce null solo se la sessione non esiste (404); ogni altro errore viene propagato.
+export async function fetchCurrentSessionIfExists(): Promise<ExamSession | null> {
+  const response = await fetch(`${API_URL}/sessions/current`, {
+    headers: getAuthHeaders(),
+  });
+
+  if (response.status === 404) {
+    return null;
+  }
+
+  if (!response.ok) {
+    await handleApiError(response);
+  }
+
+  return response.json();
+}
+
 export async function createCurrentSession(
   payload: Omit<ExamSession, 'id'>
 ): Promise<ExamSession> {
