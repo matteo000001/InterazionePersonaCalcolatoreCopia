@@ -3,6 +3,7 @@ import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '@exam-planner/shared-types';
 import { login, register } from './auth.api';
+import { usePageTitle } from '../shared/use-page-title';
 
 type AuthMode = 'login' | 'register';
 
@@ -33,6 +34,7 @@ export function LoginPage() {
   const navigate = useNavigate();
 
   const isRegistering = authMode === 'register';
+  usePageTitle(isRegistering ? 'Registrazione' : 'Accesso');
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();

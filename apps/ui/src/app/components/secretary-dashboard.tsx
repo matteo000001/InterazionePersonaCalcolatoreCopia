@@ -3,12 +3,21 @@ import { Navigate, useNavigate } from 'react-router-dom';
 import { User, UserRole } from '@exam-planner/shared-types';
 import { api } from '../api';
 import { getAccessToken } from '../auth/auth.api';
+import { usePageTitle } from '../shared/use-page-title';
 import { SecretaryAppointmentsSearchPage } from './secretary-appointments-search.page';
 import { SecretaryDegreeProgramsPage } from './secretary-degree-programs.page';
 import { SecretaryHomePage } from './secretary-home.page';
 import { SecretarySubjectsPage } from './secretary-subjects.page';
 import { SecretaryMenuItem } from './secretary-dashboard.types';
 import { SecretaryUsersPage } from './secretary-users.page';
+
+const secretaryPageTitles: Record<SecretaryMenuItem, string> = {
+  home: 'Pagina iniziale – Segreteria',
+  users: 'Utenti – Segreteria',
+  subjects: 'Materie – Segreteria',
+  'degree-programs': 'Corsi di laurea – Segreteria',
+  appointments: 'Visualizza appelli – Segreteria',
+};
 
 export function SecretaryDashboard() {
   const navigate = useNavigate();
@@ -19,6 +28,8 @@ export function SecretaryDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+
+  usePageTitle(secretaryPageTitles[selectedMenuItem]);
 
   useEffect(() => {
     async function loadCurrentUser() {

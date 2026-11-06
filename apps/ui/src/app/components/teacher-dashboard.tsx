@@ -13,6 +13,7 @@ import {
 import { AvailabilityCalendar } from './availability-calendar';
 import { api } from '../api';
 import { getAccessToken } from '../auth/auth.api';
+import { usePageTitle } from '../shared/use-page-title';
 import {
   createTeacherAppointment,
   deleteTeacherAppointment,
@@ -28,6 +29,7 @@ import {
 } from './secretary.api';
 
 export function TeacherDashboard() {
+  usePageTitle('Pannello docente');
   const navigate = useNavigate();
   const token = getAccessToken();
   const [user, setUser] = useState<User | null>(null);
