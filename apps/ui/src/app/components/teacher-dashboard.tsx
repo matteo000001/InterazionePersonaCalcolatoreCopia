@@ -15,6 +15,7 @@ import { PlanningWindow } from './planning-window';
 import { api } from '../api';
 import { getAccessToken } from '../auth/auth.api';
 import { usePageTitle } from '../shared/use-page-title';
+import { formatCalendarDate } from '../shared/format-calendar-date';
 import {
   createTeacherAppointment,
   deleteTeacherAppointment,
@@ -371,7 +372,11 @@ export function TeacherDashboard() {
           <div className="day-detail-header">
             <div>
               <p className="eyebrow">Dettaglio giornata</p>
-              <h3>{selectedDate ?? 'Seleziona una data'}</h3>
+              <h3>
+                {selectedDate ? (
+                  <time dateTime={selectedDate}>{formatCalendarDate(selectedDate)}</time>
+                ) : 'Seleziona una data'}
+              </h3>
             </div>
             {selectedDay ? (
               <span className={`status-label status-${selectedDay.status}`}>
@@ -445,7 +450,7 @@ export function TeacherDashboard() {
                               </option>
                               {moveTargetDays.map((day) => (
                                 <option key={day.date} value={day.date}>
-                                  {day.date}
+                                  {formatCalendarDate(day.date)}
                                 </option>
                               ))}
                             </select>
@@ -465,7 +470,9 @@ export function TeacherDashboard() {
                                 await refreshTeacherData();
                                 setSelectedDate(moveTargetDate);
                                 setMoveTargetDate('');
-                              }, `Appello spostato al ${moveTargetDate}, note mantenute`)
+                              }, moveTargetDate
+                                ? `Appello spostato a ${formatCalendarDate(moveTargetDate)}, note mantenute`
+                                : 'Appello spostato, note mantenute')
                             }
                             disabled={isSubmitting || !moveTargetDate}
                           >
@@ -560,7 +567,9 @@ export function TeacherDashboard() {
                       onClick={() => selectDay(appointment.examDate)}
                       title="Apri questa giornata per modificare l'appello"
                     >
-                      <span>{appointment.examDate}</span>
+                      <time dateTime={appointment.examDate}>
+                        {formatCalendarDate(appointment.examDate)}
+                      </time>
                       <span>{appointment.notes || 'Nessuna nota'}</span>
                     </button>
                   ))

@@ -1,4 +1,5 @@
 import { CalendarAvailabilityDay } from '@exam-planner/shared-types';
+import { formatCalendarDate } from '../shared/format-calendar-date';
 
 interface AvailabilityCalendarProps {
   days: CalendarAvailabilityDay[];
@@ -39,7 +40,9 @@ export function AvailabilityCalendar({
           onClick={() => onSelect(day.date)}
           aria-pressed={selectedDate === day.date}
         >
-          <span className="day-card__date">{day.date}</span>
+          <time className="day-card__date" dateTime={day.date}>
+            {formatCalendarDate(day.date)}
+          </time>
           <span className="day-card__status">{labelByStatus[day.status]}</span>
           {day.appointments.length > 0 ? (
             <span className="day-card__count">
