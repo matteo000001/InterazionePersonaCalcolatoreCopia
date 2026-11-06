@@ -721,6 +721,12 @@ button:disabled {
   padding: 6px 10px;
 }
 
+.day-detail-description {
+  margin: 0;
+  color: var(--text);
+  line-height: 1.5;
+}
+
 .appointment-list {
   display: grid;
   gap: 8px;

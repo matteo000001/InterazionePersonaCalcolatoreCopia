@@ -7,6 +7,7 @@ import type { CalendarAvailabilityDay, CalendarDayStatus, ExamAppointment } from
 import { api } from '../api';
 import { getAccessToken } from '../auth/auth.api';
 import {
+  createTeacherAppointment,
   fetchTeacherAppointments,
   fetchTeacherAvailability,
   fetchTeacherSubjects,
@@ -55,21 +56,61 @@ const availability: CalendarAvailabilityDay[] = [
 ];
 
 const stylesheet = readFileSync(join(__dirname, '../../styles.css'), 'utf8');
+const ownAppointmentMessage = 'Il tuo appello è inserito in questa data.';
+const closedPlanningMessage = 'La finestra di pianificazione è chiusa. Puoi consultare gli appelli, ma non inserirli, modificarli o eliminarli.';
 const statusCases: Array<{
   status: CalendarDayStatus;
   label: string;
   date: string;
   reason?: string;
+  message: string;
 }> = [
-  { status: 'available', label: 'Libero', date: '2027-01-14' },
-  { status: 'occupied', label: 'Occupato', date: '2027-01-14', reason: 'Date already occupied' },
-  { status: 'weekend', label: 'Fine settimana', date: '2027-01-16', reason: 'Weekend' },
-  { status: 'holiday', label: 'Festività', date: '2027-01-18', reason: 'Holiday' },
+  {
+    status: 'available', label: 'Libero', date: '2027-01-14',
+    message: 'Questa data è disponibile per inserire un appello.',
+  },
+  {
+    status: 'occupied', label: 'Occupato', date: '2027-01-14', reason: 'Date already occupied',
+    message: ownAppointmentMessage,
+  },
+  {
+    status: 'weekend', label: 'Fine settimana', date: '2027-01-16', reason: 'Weekend',
+    message: 'Questa data cade nel fine settimana: non è possibile pianificare appelli.',
+  },
+  {
+    status: 'holiday', label: 'Festività', date: '2027-01-18', reason: 'Holiday',
+    message: 'Questa data è una festività esclusa dalla sessione: non è possibile pianificare appelli.',
+  },
   {
     status: 'outside-planning-window',
     label: 'Finestra chiusa',
     date: '2027-01-19',
     reason: 'Planning window closed',
+    message: closedPlanningMessage,
+  },
+];
+
+const constrainedOwnAppointmentCases: Array<{
+  status: CalendarDayStatus;
+  date: string;
+  planningOpen: boolean;
+  message: string;
+}> = [
+  {
+    status: 'outside-planning-window', date: '2027-01-14', planningOpen: false,
+    message: `${ownAppointmentMessage} ${closedPlanningMessage}`,
+  },
+  {
+    status: 'occupied', date: '2027-01-14', planningOpen: false,
+    message: `${ownAppointmentMessage} ${closedPlanningMessage}`,
+  },
+  {
+    status: 'holiday', date: '2027-01-18', planningOpen: true,
+    message: `${ownAppointmentMessage} Questa data è una festività esclusa dalla sessione: non è possibile pianificare appelli.`,
+  },
+  {
+    status: 'weekend', date: '2027-01-16', planningOpen: false,
+    message: `${ownAppointmentMessage} Questa data cade nel fine settimana: non è possibile pianificare appelli. ${closedPlanningMessage}`,
   },
 ];
 
@@ -263,7 +304,7 @@ describe('Visibilità del dettaglio della giornata', () => {
     expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
   });
 
-  it.each(statusCases)('uniforma etichetta e colori dello stato $status nei tre contesti', async ({ status, label, date, reason }) => {
+  it.each(statusCases)('uniforma lo stato $status e ne spiega il significato in italiano', async ({ status, label, date, reason, message }) => {
     const selectedDay: CalendarAvailabilityDay = {
       date,
       status,
@@ -283,6 +324,7 @@ describe('Visibilità del dettaglio della giornata', () => {
       const legend = screen.getByRole('group', { name: 'Legenda del calendario' });
       const legendLabel = within(legend).getByText(label);
       const detailLabel = within(panel).getByText(label);
+      expect(within(panel).getByRole('status').textContent).toBe(message);
       const table = screen.getByRole('table', { name: 'gennaio 2027' });
       const dayButton = within(table).getByRole('button', { pressed: true });
       expect(dayButton.getAttribute('aria-label')).toContain(`. ${label}.`);
@@ -303,5 +345,89 @@ describe('Visibilità del dettaglio della giornata', () => {
     } finally {
       styleElement.remove();
     }
+  });
+
+  it('riconosce il proprio appello appena inserito senza presentarlo come errore', async () => {
+    const panel = await renderDashboard();
+    fireEvent.click(screen.getByRole('button', { name: /venerdì 15 gennaio 2027/ }));
+    const createdAppointment = { ...appointment, id: 'appointment-2', examDate: '2027-01-15' };
+    jest.mocked(createTeacherAppointment).mockResolvedValue(createdAppointment);
+    jest.mocked(fetchTeacherAppointments).mockResolvedValue([appointment, createdAppointment]);
+    jest.mocked(fetchTeacherAvailability).mockResolvedValue([
+      availability[0],
+      {
+        ...availability[1],
+        status: 'occupied',
+        isSelectable: false,
+        reason: 'Date already occupied',
+        appointments: [createdAppointment],
+      },
+    ]);
+
+    fireEvent.click(within(panel).getByRole('button', { name: 'Inserisci appello in questa data' }));
+
+    await waitFor(() => expect(within(panel).getByRole('status').textContent).toBe(ownAppointmentMessage));
+    expect(createTeacherAppointment).toHaveBeenCalledWith(expect.objectContaining({
+      subjectId: 1,
+      degreeProgramId: 'course-1',
+      examDate: '2027-01-15',
+    }));
+    expect(within(panel).queryByText('Date already occupied')).toBeNull();
+    expect(screen.queryByRole('alert')).toBeNull();
+  });
+
+  it.each([1, 2])('distingue %i appelli altrui da quelli del docente autenticato', async (count) => {
+    const otherAppointments = Array.from({ length: count }, (_, index) => ({
+      ...appointment,
+      id: `other-appointment-${index}`,
+      teacherId: index + 2,
+    }));
+    jest.mocked(fetchTeacherAppointments).mockResolvedValue(otherAppointments);
+    jest.mocked(fetchTeacherAvailability).mockResolvedValue([
+      { ...availability[0], reason: 'Date already occupied', appointments: otherAppointments },
+      availability[1],
+    ]);
+
+    const panel = await renderDashboard();
+
+    expect(within(panel).getByRole('status').textContent).toBe(count === 1
+      ? 'In questa data è già presente un appello di un altro docente.'
+      : 'In questa data sono già presenti appelli di altri docenti.');
+    expect(within(panel).queryByText(ownAppointmentMessage)).toBeNull();
+  });
+
+  it('segnala correttamente la presenza di appelli propri e di altri docenti', async () => {
+    const appointments = [appointment, { ...appointment, id: 'other-appointment', teacherId: 2 }];
+    jest.mocked(fetchTeacherAppointments).mockResolvedValue(appointments);
+    jest.mocked(fetchTeacherAvailability).mockResolvedValue([
+      { ...availability[0], appointments },
+      availability[1],
+    ]);
+
+    const panel = await renderDashboard();
+
+    expect(within(panel).getByRole('status').textContent)
+      .toBe('In questa data sono presenti appelli tuoi e di altri docenti.');
+  });
+
+  it.each(constrainedOwnAppointmentCases)('mantiene visibili i vincoli $status anche con un proprio appello', async ({ status, date, planningOpen, message }) => {
+    const ownAppointment = { ...appointment, examDate: date };
+    jest.mocked(fetchTeacherAppointments).mockResolvedValue([ownAppointment]);
+    jest.mocked(fetchTeacherAvailability).mockResolvedValue([
+      {
+        date,
+        status,
+        isSelectable: false,
+        isPlanningOpen: planningOpen,
+        reason: 'Server reason in English',
+        appointments: [ownAppointment],
+      },
+      availability[1],
+    ]);
+
+    const panel = await renderDashboard();
+
+    expect(within(panel).getByRole('status').textContent).toBe(message);
+    expect(within(panel).queryByText('Server reason in English')).toBeNull();
   });
 });

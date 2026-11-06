@@ -16,7 +16,7 @@ import { api } from '../api';
 import { getAccessToken } from '../auth/auth.api';
 import { usePageTitle } from '../shared/use-page-title';
 import { formatCalendarDate } from '../shared/format-calendar-date';
-import { calendarStatusLabels } from '../shared/calendar-status';
+import { calendarStatusLabels, getCalendarDayMessage } from '../shared/calendar-status';
 import {
   createTeacherAppointment,
   deleteTeacherAppointment,
@@ -421,6 +421,9 @@ export function TeacherDashboard() {
 
           {selectedDay ? (
             <>
+              <p className="day-detail-description" role="status">
+                {getCalendarDayMessage(selectedDay, user.id)}
+              </p>
               <div className="appointment-list">
                 {selectedDay.appointments.length > 0 ? (
                   selectedDay.appointments.map((appointment) => (
