@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import {
   CalendarAvailabilityDay,
@@ -51,6 +51,9 @@ export function TeacherDashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [detailRequest, setDetailRequest] = useState(0);
+  const detailPanelRef = useRef<HTMLElement>(null);
+  const detailHeadingRef = useRef<HTMLHeadingElement>(null);
 
   const visibleDegreePrograms =
     user?.managedDegreeProgramIds && user.managedDegreeProgramIds.length > 0
@@ -69,6 +72,29 @@ export function TeacherDashboard() {
     ? appointments.filter((appointment) => appointment.teacherId === user.id)
     : [];
   const moveTargetDays = availability.filter((day) => day.isSelectable);
+
+  useEffect(() => {
+    if (detailRequest === 0) {
+      return;
+    }
+
+    const panel = detailPanelRef.current;
+    const heading = detailHeadingRef.current;
+    if (!panel || !heading) {
+      return;
+    }
+
+    panel.scrollTop = 0;
+    heading.focus({ preventScroll: true });
+    const bounds = heading.getBoundingClientRect();
+    const stackedLayout = window.matchMedia('(max-width: 980px)').matches;
+    const headingVisible = bounds.top >= 0 && bounds.bottom <= window.innerHeight;
+
+    if (stackedLayout || !headingVisible) {
+      const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+      panel.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' });
+    }
+  }, [detailRequest]);
 
   useEffect(() => {
     async function loadPage() {
@@ -203,6 +229,10 @@ export function TeacherDashboard() {
     setSelectedCourseYearId(subject.courseYearId);
   }
 
+  function requestDayDetail() {
+    setDetailRequest((current) => current + 1);
+  }
+
   function selectDay(date: string) {
     setSelectedDate(date);
     setMoveTargetDate('');
@@ -212,6 +242,7 @@ export function TeacherDashboard() {
         ?.appointments.find((appointment) => appointment.teacherId === user?.id) ??
       appointments.find((appointment) => appointment.teacherId === user?.id);
     setNotes(ownAppointment?.notes ?? '');
+    requestDayDetail();
   }
 
   function selectDegreeProgram(degreeProgramId: string) {
@@ -368,11 +399,15 @@ export function TeacherDashboard() {
           )}
         </div>
 
-        <aside className="panel side-panel">
+        <aside
+          ref={detailPanelRef}
+          className="panel side-panel teacher-day-detail"
+          aria-label="Dettaglio giornata"
+        >
           <div className="day-detail-header">
             <div>
               <p className="eyebrow">Dettaglio giornata</p>
-              <h3>
+              <h3 ref={detailHeadingRef} tabIndex={-1}>
                 {selectedDate ? (
                   <time dateTime={selectedDate}>{formatCalendarDate(selectedDate)}</time>
                 ) : 'Seleziona una data'}
@@ -470,6 +505,7 @@ export function TeacherDashboard() {
                                 await refreshTeacherData();
                                 setSelectedDate(moveTargetDate);
                                 setMoveTargetDate('');
+                                requestDayDetail();
                               }, moveTargetDate
                                 ? `Appello spostato a ${formatCalendarDate(moveTargetDate)}, note mantenute`
                                 : 'Appello spostato, note mantenute')
