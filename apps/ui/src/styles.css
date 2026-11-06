@@ -516,10 +516,72 @@ button:disabled {
   background: rgba(95, 109, 121, 0.18);
 }
 
-.calendar-grid {
+.calendar-months {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  gap: 14px;
+  gap: 28px;
+  min-width: 0;
+}
+
+.calendar-month {
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.calendar-month:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+}
+
+.calendar-grid {
+  width: 100%;
+  min-width: 700px;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 8px;
+}
+
+.calendar-grid caption {
+  padding: 0 8px 12px;
+  color: var(--accent-dark);
+  text-align: left;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.calendar-grid th {
+  padding: 6px 4px;
+  color: var(--muted);
+  text-align: center;
+  font-size: 0.85rem;
+}
+
+.calendar-grid th abbr {
+  text-decoration: none;
+}
+
+.calendar-grid td {
+  padding: 0;
+  vertical-align: top;
+}
+
+.calendar-cell--empty {
+  border-radius: 12px;
+  background: rgba(7, 25, 47, 0.025);
+}
+
+.calendar-grid .day-card {
+  width: 100%;
+  min-width: 0;
+  height: 100%;
+  padding: 10px;
+  border-radius: 12px;
+  overflow-wrap: anywhere;
+}
+
+.calendar-grid .day-card__date {
+  font-size: 0.9rem;
 }
 
 .calendar-empty {

@@ -8,10 +8,12 @@ export default defineConfig(() => ({
   cacheDir: '../../node_modules/.vite/apps/ui',
   server: {
     port: 4200,
+    strictPort: true,
     host: 'localhost',
   },
   preview: {
     port: 4200,
+    strictPort: true,
     host: 'localhost',
   },
   plugins: [react()],
