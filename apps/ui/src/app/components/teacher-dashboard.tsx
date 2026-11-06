@@ -262,20 +262,19 @@ export function TeacherDashboard() {
   return (
     <main className="app-shell">
       <section className="hero">
-        <div className="hero-card">
-          <div className="summary-row">
-            <span>Utente</span>
+        <div className="hero-card teacher-header">
+          <h1>Pannello docente</h1>
+
+          <div className="teacher-user-menu">
             <strong>{user.name}</strong>
+            <button
+              type="button"
+              className="secondary"
+              onClick={() => navigate('/logout')}
+            >
+              Esci
+            </button>
           </div>
-
-          <button
-            type="button"
-            className="secondary"
-            onClick={() => navigate('/logout')}
-          >
-            Esci
-          </button>
-
         </div>
       </section>
 
@@ -285,10 +284,7 @@ export function TeacherDashboard() {
       <section className="dashboard-grid">
         <div className="panel">
           <div className="panel__header">
-            <div>
-              <p className="eyebrow">Pannello docente</p>
-              <h2>{user.name}</h2>
-            </div>
+            <h2>Calendario appelli</h2>
             <div className="session-badge">
               Pianificazione: {session.planningStart} - {session.planningEnd}
             </div>

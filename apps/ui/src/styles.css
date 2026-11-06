@@ -244,6 +244,31 @@ textarea {
   border-bottom: 0;
 }
 
+.teacher-header h1 {
+  margin: 0;
+  font-size: clamp(1.5rem, 3vw, 2rem);
+}
+
+.teacher-user-menu {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+  margin-left: auto;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.teacher-user-menu strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.teacher-user-menu button {
+  flex-shrink: 0;
+}
+
 .panel {
   padding: 24px;
 }
