@@ -28,11 +28,15 @@ export class CreateUserDto {
   @IsNotEmpty()
   email!: string;
 
-  @IsNotEmpty()
-  @MinLength(8)
-  @IsString()
-  @Matches(/[A-Z]/, {message:'Password must have at least one upper capital case'})//deve avere almeno un carattere maiuscolo tra a e z
-  @Matches(/[?^!@#]/,{message:'Password must have one special caracter among ?^!@#'})
+  @IsNotEmpty({ message: 'Inserisci una password.' })
+  @MinLength(8, { message: 'La password deve contenere almeno 8 caratteri.' })
+  @IsString({ message: 'La password deve essere una stringa di testo.' })
+  @Matches(/[A-Z]/, {
+    message: 'La password deve contenere almeno una lettera maiuscola da A a Z.',
+  })
+  @Matches(/[?^!@#]/, {
+    message: 'La password deve contenere almeno un carattere speciale tra ?^!@#.',
+  })
   password: string;
 
   @ApiProperty({
