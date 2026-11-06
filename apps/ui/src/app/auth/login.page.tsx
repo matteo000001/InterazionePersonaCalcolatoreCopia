@@ -94,7 +94,7 @@ export function LoginPage() {
             <input
               type="email"
               value={email}
-              placeholder="lucaferri@icloud.com"
+              placeholder="Inserisci la tua e-mail"
               onChange={(event) => setEmail(event.target.value)}
               required
             />
@@ -105,7 +105,7 @@ export function LoginPage() {
             <input
               type="password"
               value={password}
-              placeholder="Password1!"
+              placeholder="Inserisci la tua password"
               onChange={(event) => setPassword(event.target.value)}
               required
             />
