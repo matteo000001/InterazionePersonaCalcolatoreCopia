@@ -274,12 +274,6 @@ export function TeacherDashboard() {
             Esci
           </button>
 
-          <div className="summary-row">
-            <span>Documentazione API</span>
-            <a href="http://localhost:3333/api/docs" target="_blank" rel="noreferrer">
-              http://localhost:3333/api/docs
-            </a>
-          </div>
         </div>
       </section>
 
