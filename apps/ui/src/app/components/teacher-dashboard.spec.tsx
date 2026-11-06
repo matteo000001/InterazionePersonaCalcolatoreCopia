@@ -1,7 +1,9 @@
 /** @jest-environment jsdom */
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { UserRole } from '@exam-planner/shared-types';
-import type { CalendarAvailabilityDay, ExamAppointment } from '@exam-planner/shared-types';
+import type { CalendarAvailabilityDay, CalendarDayStatus, ExamAppointment } from '@exam-planner/shared-types';
 import { api } from '../api';
 import { getAccessToken } from '../auth/auth.api';
 import {
@@ -49,6 +51,25 @@ const availability: CalendarAvailabilityDay[] = [
     isSelectable: true,
     isPlanningOpen: true,
     appointments: [],
+  },
+];
+
+const stylesheet = readFileSync(join(__dirname, '../../styles.css'), 'utf8');
+const statusCases: Array<{
+  status: CalendarDayStatus;
+  label: string;
+  date: string;
+  reason?: string;
+}> = [
+  { status: 'available', label: 'Libero', date: '2027-01-14' },
+  { status: 'occupied', label: 'Occupato', date: '2027-01-14', reason: 'Date already occupied' },
+  { status: 'weekend', label: 'Fine settimana', date: '2027-01-16', reason: 'Weekend' },
+  { status: 'holiday', label: 'Festività', date: '2027-01-18', reason: 'Holiday' },
+  {
+    status: 'outside-planning-window',
+    label: 'Finestra chiusa',
+    date: '2027-01-19',
+    reason: 'Planning window closed',
   },
 ];
 
@@ -240,5 +261,47 @@ describe('Visibilità del dettaglio della giornata', () => {
       .toBe(screen.getByRole('heading', { name: 'venerdì 15 gennaio 2027' })));
     expect(updateTeacherAppointment).toHaveBeenCalledWith('appointment-1', { examDate: '2027-01-15' });
     expect(scrollIntoView).toHaveBeenCalledWith({ behavior: 'smooth', block: 'start' });
+  });
+
+  it.each(statusCases)('uniforma etichetta e colori dello stato $status nei tre contesti', async ({ status, label, date, reason }) => {
+    const selectedDay: CalendarAvailabilityDay = {
+      date,
+      status,
+      reason,
+      isSelectable: status === 'available',
+      isPlanningOpen: status !== 'outside-planning-window',
+      appointments: status === 'occupied' ? [appointment] : [],
+    };
+    jest.mocked(fetchTeacherAvailability).mockResolvedValue([selectedDay, availability[1]]);
+    jest.mocked(fetchTeacherAppointments).mockResolvedValue(selectedDay.appointments);
+    const styleElement = document.createElement('style');
+    styleElement.textContent = stylesheet;
+    document.head.appendChild(styleElement);
+
+    try {
+      const panel = await renderDashboard();
+      const legend = screen.getByRole('group', { name: 'Legenda del calendario' });
+      const legendLabel = within(legend).getByText(label);
+      const detailLabel = within(panel).getByText(label);
+      const table = screen.getByRole('table', { name: 'gennaio 2027' });
+      const dayButton = within(table).getByRole('button', { pressed: true });
+      expect(dayButton.getAttribute('aria-label')).toContain(`. ${label}.`);
+      expect(dayButton.getAttribute('title')).toContain(`. ${label}.`);
+      expect(dayButton.querySelector('time')?.getAttribute('datetime')).toBe(date);
+      if (reason) {
+        expect(within(panel).queryByText(reason)).toBeNull();
+      }
+
+      const styles = [legendLabel, dayButton, detailLabel].map((element) => {
+        expect(element.classList.contains(`status-${status}`)).toBe(true);
+        const computed = window.getComputedStyle(element);
+        return { background: computed.backgroundColor, text: computed.color };
+      });
+      expect(styles[0].background).not.toBe('rgba(0, 0, 0, 0)');
+      expect(styles[1]).toEqual(styles[0]);
+      expect(styles[2]).toEqual(styles[0]);
+    } finally {
+      styleElement.remove();
+    }
   });
 });

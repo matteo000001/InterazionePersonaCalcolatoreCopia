@@ -489,31 +489,29 @@ button:disabled {
   margin-bottom: 18px;
 }
 
-.legend-pill.available,
 .status-available {
-  background: rgba(43, 124, 84, 0.12);
-  color: var(--success);
+  background: #e7f6ec;
+  color: #1f6540;
 }
 
-.legend-pill.occupied,
 .status-occupied {
-  background: rgba(204, 92, 45, 0.14);
-  color: var(--accent-dark);
+  background: #fff1e9;
+  color: #7a3c20;
 }
 
-.legend-pill.weekend,
 .status-weekend {
-  background: rgba(23, 35, 47, 0.09);
+  background: #e9edf3;
+  color: #374151;
 }
 
-.legend-pill.holiday,
 .status-holiday {
-  background: rgba(176, 116, 32, 0.18);
+  background: #fff7df;
+  color: #735016;
 }
 
-.legend-pill.blocked,
 .status-outside-planning-window {
-  background: rgba(95, 109, 121, 0.18);
+  background: #e6e9ed;
+  color: #4b5563;
 }
 
 .calendar-months {
@@ -677,23 +675,6 @@ button:disabled {
 .day-card__count {
   font-size: 0.88rem;
   color: var(--muted);
-}
-
-.status-available.day-card {
-  background: rgba(240, 255, 248, 0.88);
-}
-
-.status-occupied.day-card {
-  background: rgba(255, 241, 233, 0.9);
-}
-
-.status-weekend.day-card,
-.status-outside-planning-window.day-card {
-  background: rgba(245, 245, 245, 0.9);
-}
-
-.status-holiday.day-card {
-  background: rgba(255, 247, 223, 0.94);
 }
 
 .side-panel,

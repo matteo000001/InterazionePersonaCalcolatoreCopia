@@ -16,6 +16,7 @@ import { api } from '../api';
 import { getAccessToken } from '../auth/auth.api';
 import { usePageTitle } from '../shared/use-page-title';
 import { formatCalendarDate } from '../shared/format-calendar-date';
+import { calendarStatusLabels } from '../shared/calendar-status';
 import {
   createTeacherAppointment,
   deleteTeacherAppointment,
@@ -382,12 +383,10 @@ export function TeacherDashboard() {
             </label>
           </div>
 
-          <div className="legend">
-            <span className="legend-pill available">Libero</span>
-            <span className="legend-pill occupied">Occupato</span>
-            <span className="legend-pill weekend">Fine settimana</span>
-            <span className="legend-pill holiday">Festivita</span>
-            <span className="legend-pill blocked">Finestra chiusa</span>
+          <div className="legend" role="group" aria-label="Legenda del calendario">
+            {Object.entries(calendarStatusLabels).map(([status, label]) => (
+              <span key={status} className={`legend-pill status-${status}`}>{label}</span>
+            ))}
           </div>
 
           <AvailabilityCalendar
@@ -415,7 +414,7 @@ export function TeacherDashboard() {
             </div>
             {selectedDay ? (
               <span className={`status-label status-${selectedDay.status}`}>
-                {selectedDay.reason ?? 'Data disponibile'}
+                {calendarStatusLabels[selectedDay.status]}
               </span>
             ) : null}
           </div>

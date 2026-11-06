@@ -1,20 +1,13 @@
 import { useEffect, useState } from 'react';
 import type { CalendarAvailabilityDay } from '@exam-planner/shared-types';
 import { formatCalendarDate } from '../shared/format-calendar-date';
+import { calendarStatusLabels } from '../shared/calendar-status';
 
 interface AvailabilityCalendarProps {
   days: CalendarAvailabilityDay[];
   selectedDate?: string;
   onSelect: (date: string) => void;
 }
-
-const labelByStatus: Record<CalendarAvailabilityDay['status'], string> = {
-  available: 'Libero',
-  occupied: 'Occupato',
-  weekend: 'Fine settimana',
-  holiday: 'Festivita',
-  'outside-planning-window': 'Bloccato',
-};
 
 const weekdays = [
   { short: 'Lun', name: 'Lunedì' },
@@ -69,7 +62,7 @@ function describeDay(day: CalendarAvailabilityDay) {
   const appointments = count === 0
     ? 'Nessun appello'
     : `${count} ${count === 1 ? 'appello' : 'appelli'}`;
-  return `${formatCalendarDate(day.date)}. ${labelByStatus[day.status]}. ${appointments}.`;
+  return `${formatCalendarDate(day.date)}. ${calendarStatusLabels[day.status]}. ${appointments}.`;
 }
 
 export function AvailabilityCalendar({
