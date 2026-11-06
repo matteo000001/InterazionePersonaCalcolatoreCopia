@@ -11,6 +11,7 @@ import {
   UserRole,
 } from '@exam-planner/shared-types';
 import { AvailabilityCalendar } from './availability-calendar';
+import { PlanningWindow } from './planning-window';
 import { api } from '../api';
 import { getAccessToken } from '../auth/auth.api';
 import { usePageTitle } from '../shared/use-page-title';
@@ -285,10 +286,12 @@ export function TeacherDashboard() {
         <div className="panel">
           <div className="panel__header">
             <h2>Calendario appelli</h2>
-            <div className="session-badge">
-              Pianificazione: {session.planningStart} - {session.planningEnd}
-            </div>
           </div>
+
+          <PlanningWindow
+            planningStart={session.planningStart}
+            planningEnd={session.planningEnd}
+          />
 
           {visibleDegreePrograms.length === 0 ? (
             <div className="calendar-empty no-programs-notice">

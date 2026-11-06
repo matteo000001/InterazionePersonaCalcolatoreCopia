@@ -347,6 +347,58 @@ textarea {
   margin-bottom: 18px;
 }
 
+.planning-window {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 20px;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: rgba(15, 76, 129, 0.04);
+}
+
+.planning-window__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.planning-window p {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.planning-window__dates,
+.planning-window__message {
+  font-weight: 600;
+}
+
+.planning-window__explanation {
+  color: var(--muted);
+}
+
+.planning-window__status {
+  display: inline-flex;
+  padding: 6px 12px;
+  border-radius: 999px;
+  color: var(--accent-dark);
+  background: rgba(15, 76, 129, 0.1);
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.planning-window__status--open {
+  color: var(--success);
+  background: rgba(43, 124, 84, 0.1);
+}
+
+.planning-window__status--closed {
+  color: var(--danger);
+  background: rgba(191, 59, 47, 0.1);
+}
+
 .session-badge,
 .legend-pill,
 .status-label {
