@@ -83,6 +83,15 @@ export function TeacherDashboard() {
   const moveTargetDays = availability.filter(isCalendarDayAvailable);
   const selectedMoveTarget = moveTargetDays.find((day) => day.date === moveTargetDate);
 
+  // Il campo note mostra sempre le note salvate dell'appello della giornata
+  // selezionata (anche al primo caricamento e dopo inserimento o spostamento):
+  // così svuotarlo e salvare cancella solo una nota che l'utente ha visto.
+  const ownAppointmentId = ownAppointmentOnSelectedDay?.id;
+  const ownAppointmentNotes = ownAppointmentOnSelectedDay?.notes;
+  useEffect(() => {
+    setNotes(ownAppointmentNotes ?? '');
+  }, [selectedDate, ownAppointmentId, ownAppointmentNotes]);
+
   // Il messaggio di conferma si riferisce all'ultima azione: scompare da solo dopo
   // qualche secondo e viene rimosso appena l'utente cambia giorno, corso o materia.
   useEffect(() => {
@@ -363,13 +372,22 @@ export function TeacherDashboard() {
         : undefined
   );
   // Per un appello già inserito l'unica modifica possibile da qui sono le note:
-  // non serve quindi una materia selezionata nel filtro.
+  // non serve quindi una materia selezionata nel filtro, ma il salvataggio ha
+  // senso solo se il testo è cambiato rispetto a quello salvato.
+  const savedNotes = ownAppointmentOnSelectedDay?.notes ?? '';
+  const trimmedNotes = notes.trim();
+  const notesUnchangedReason =
+    ownAppointmentOnSelectedDay && !editBlockReason && trimmedNotes === savedNotes.trim()
+      ? savedNotes.trim()
+        ? 'Nessuna modifica da salvare. Cambia il testo delle note, oppure svuota il campo per cancellarle.'
+        : 'Nessuna modifica da salvare. Scrivi una nota per poterla salvare.'
+      : undefined;
   const primaryBlockReason = ownAppointmentOnSelectedDay
-    ? editBlockReason
+    ? editBlockReason ?? notesUnchangedReason
     : createBlockReason;
   const notesBlockReason = ownAppointmentOnSelectedDay ? editBlockReason : createBlockReason;
   const busyReason = isSubmitting ? 'Operazione in corso. Attendi il completamento.' : undefined;
-  const actionHelp = busyReason ?? (primaryBlockReason
+  const actionHelp = busyReason ?? notesUnchangedReason ?? (primaryBlockReason
     ? `${ownAppointmentOnSelectedDay ? 'Modifica delle note' : 'Inserimento'} non disponibile. ${primaryBlockReason}`
     : undefined);
   const planningBlockReason = selectedDay && (!selectedDay.isPlanningOpen || selectedDay.status === 'outside-planning-window')
@@ -642,10 +660,11 @@ export function TeacherDashboard() {
                   onClick={() =>
                     void handleMutation(async () => {
                       await updateTeacherAppointment(ownAppointmentOnSelectedDay.id, {
-                        notes,
+                        notes: trimmedNotes,
                       });
                       await refreshTeacherData();
-                    }, 'Note dell’appello salvate')
+                      setNotes(trimmedNotes);
+                    }, trimmedNotes ? 'Note dell’appello salvate' : 'Note dell’appello cancellate')
                   }
                   disabled={isSubmitting || Boolean(primaryBlockReason)}
                   aria-describedby={actionHelp ? 'appointment-action-help' : undefined}
@@ -673,7 +692,6 @@ export function TeacherDashboard() {
                         notes,
                       });
                       await refreshTeacherData();
-                      setNotes('');
                     }, 'Appello inserito correttamente')
                   }
                   disabled={isSubmitting || Boolean(primaryBlockReason)}

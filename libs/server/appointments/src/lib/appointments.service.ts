@@ -86,7 +86,9 @@ export class AppointmentsService {
       ...appointment,
       ...dto,
       courseYearId: subject.courseYearId,
-      notes: dto.notes?.trim() || appointment.notes,
+      // Una nota vuota cancella quella precedente; se il campo non viene
+      // inviato la nota resta invariata.
+      notes: dto.notes !== undefined ? dto.notes.trim() : appointment.notes,
     };
 
     await this.ensureMutationAllowed(updatedAppointment.examDate);

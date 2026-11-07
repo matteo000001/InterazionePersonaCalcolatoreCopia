@@ -124,6 +124,8 @@ let reducedMotion = false;
 async function renderDashboard() {
   render(<TeacherDashboard />);
   await screen.findByRole('button', { name: /venerdì 15 gennaio 2027/ });
+  // Completa gli effetti successivi al caricamento (es. note della giornata selezionata).
+  await act(async () => undefined);
   return screen.getByRole('complementary', { name: 'Dettaglio giornata' });
 }
 
@@ -359,7 +361,8 @@ describe('Visibilità del dettaglio della giornata', () => {
       });
       const blocked = status !== 'available' && status !== 'occupied';
       expect(notes.hasAttribute('disabled')).toBe(blocked);
-      expect(primary.hasAttribute('disabled')).toBe(blocked);
+      // Con il proprio appello «Salva note» resta disattivato finché le note non cambiano.
+      await waitFor(() => expect(primary.hasAttribute('disabled')).toBe(blocked || status === 'occupied'));
       if (blocked) {
         const help = expectDisabledWithHelp(primary);
         expect(expectDisabledWithHelp(notes)).toBe(help);
@@ -514,7 +517,8 @@ describe('Visibilità del dettaglio della giornata', () => {
     expect((notes as HTMLTextAreaElement).value).toBe('Nota salvata');
     // Un solo comando modifica le note e non richiede una materia nel filtro.
     expect(within(panel).getAllByRole('button', { name: /Salva note|Aggiorna/ })).toHaveLength(1);
-    expect(within(panel).getByRole('button', { name: 'Salva note' }).hasAttribute('disabled')).toBe(false);
+    expect(expectDisabledWithHelp(within(panel).getByRole('button', { name: 'Salva note' })).textContent)
+      .toContain('Nessuna modifica da salvare.');
     expect(within(panel).getByRole('button', { name: 'Elimina' }).hasAttribute('disabled')).toBe(false);
     expect(within(panel).getByRole('combobox', { name: 'Sposta a' }).hasAttribute('disabled')).toBe(false);
     const updatedAppointment = { ...appointment, notes: 'Nota aggiornata' };
@@ -525,6 +529,7 @@ describe('Visibilità del dettaglio della giornata', () => {
     ]);
 
     fireEvent.change(notes, { target: { value: 'Nota aggiornata' } });
+    expect(within(panel).getByRole('button', { name: 'Salva note' }).hasAttribute('disabled')).toBe(false);
     fireEvent.click(within(panel).getByRole('button', { name: 'Salva note' }));
 
     await waitFor(() => expect(updateTeacherAppointment).toHaveBeenCalledWith('appointment-1', {
@@ -689,5 +694,33 @@ describe('Visibilità del dettaglio della giornata', () => {
     await screen.findByRole('table', { name: 'gennaio 2027' });
     expect(fetchTeacherAvailability).toHaveBeenLastCalledWith('course-2', 'year-1');
     expect(screen.getByText('1° anno')).toBeTruthy();
+  });
+  it('permette di cancellare la nota e conferma solo ciò che è stato davvero salvato', async () => {
+    const panel = await renderDashboard();
+    const notes = within(panel).getByRole('textbox', { name: 'Note appello' });
+    const saveButton = within(panel).getByRole('button', { name: 'Salva note' });
+    await waitFor(() => expect((notes as HTMLTextAreaElement).value).toBe('Nota salvata'));
+    const clearedAppointment = { ...appointment, notes: '' };
+    jest.mocked(updateTeacherAppointment).mockResolvedValue(clearedAppointment);
+    jest.mocked(fetchTeacherAppointments).mockResolvedValue([clearedAppointment]);
+    jest.mocked(fetchTeacherAvailability).mockResolvedValue([
+      { ...availability[0], appointments: [clearedAppointment] }, availability[1],
+    ]);
+
+    fireEvent.change(notes, { target: { value: '   ' } });
+    fireEvent.click(saveButton);
+
+    await waitFor(() => expect(updateTeacherAppointment).toHaveBeenCalledWith('appointment-1', { notes: '' }));
+    expect(await within(panel).findByText('Note dell’appello cancellate')).toBeTruthy();
+    expect(within(panel).queryByText('Nota salvata')).toBeNull();
+    expect(expectDisabledWithHelp(saveButton).textContent).toContain('Scrivi una nota per poterla salvare.');
+  });
+  it('mostra nel campo le note salvate del proprio appello già al primo caricamento', async () => {
+    const panel = await renderDashboard();
+
+    await waitFor(() => expect(
+      (within(panel).getByRole('textbox', { name: 'Note appello' }) as HTMLTextAreaElement).value
+    ).toBe('Nota salvata'));
+    expectDisabledWithHelp(within(panel).getByRole('button', { name: 'Salva note' }));
   });
 });
