@@ -11,13 +11,23 @@ import { SecretarySubjectsPage } from './secretary-subjects.page';
 import { SecretaryMenuItem } from './secretary-dashboard.types';
 import { SecretaryUsersPage } from './secretary-users.page';
 
-const secretaryPageTitles: Record<SecretaryMenuItem, string> = {
-  home: 'Pagina iniziale – Segreteria',
-  users: 'Utenti – Segreteria',
-  subjects: 'Materie – Segreteria',
-  'degree-programs': 'Corsi di laurea – Segreteria',
-  appointments: 'Visualizza appelli – Segreteria',
+// Le voci del menu riportano lo stesso nome della pagina che aprono.
+const secretaryMenuLabels: Record<SecretaryMenuItem, string> = {
+  home: 'Configurazione sessione',
+  users: 'Utenti',
+  subjects: 'Materie',
+  'degree-programs': 'Corsi di laurea',
+  appointments: 'Ricerca appelli',
 };
+
+const secretaryMenuItems = Object.keys(secretaryMenuLabels) as SecretaryMenuItem[];
+
+const secretaryPageTitles: Record<SecretaryMenuItem, string> = Object.fromEntries(
+  secretaryMenuItems.map((menuItem) => [
+    menuItem,
+    `${secretaryMenuLabels[menuItem]} – Segreteria`,
+  ])
+) as Record<SecretaryMenuItem, string>;
 
 // Ogni sezione ha il proprio indirizzo: il tasto «Indietro» del browser torna
 // alla sezione precedente e ricaricando la pagina si resta nella stessa sezione.
@@ -162,47 +172,19 @@ export function SecretaryDashboard() {
             <strong>{user?.name ?? 'Segreteria'}</strong>
           </div>
 
-          <div className="inline-actions">
-            <button
-              type="button"
-              className={selectedMenuItem === 'home' ? 'primary' : 'secondary'}
-              onClick={() => selectMenuItem('home')}
-            >
-              Pagina iniziale
-            </button>
-            <button
-              type="button"
-              className={selectedMenuItem === 'users' ? 'primary' : 'secondary'}
-              onClick={() => selectMenuItem('users')}
-            >
-              Utenti
-            </button>
-            <button
-              type="button"
-              className={selectedMenuItem === 'subjects' ? 'primary' : 'secondary'}
-              onClick={() => selectMenuItem('subjects')}
-            >
-              Materie
-            </button>
-            <button
-              type="button"
-              className={
-                selectedMenuItem === 'degree-programs' ? 'primary' : 'secondary'
-              }
-              onClick={() => selectMenuItem('degree-programs')}
-            >
-              Corsi di laurea
-            </button>
-            <button
-              type="button"
-              className={
-                selectedMenuItem === 'appointments' ? 'primary' : 'secondary'
-              }
-              onClick={() => selectMenuItem('appointments')}
-            >
-              Visualizza appelli
-            </button>
-          </div>
+          <nav className="inline-actions secretary-menu" aria-label="Menu segreteria">
+            {secretaryMenuItems.map((menuItem) => (
+              <button
+                key={menuItem}
+                type="button"
+                className={selectedMenuItem === menuItem ? 'primary' : 'secondary'}
+                aria-current={selectedMenuItem === menuItem ? 'page' : undefined}
+                onClick={() => selectMenuItem(menuItem)}
+              >
+                {secretaryMenuLabels[menuItem]}
+              </button>
+            ))}
+          </nav>
 
           <button
             type="button"

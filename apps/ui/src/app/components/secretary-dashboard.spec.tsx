@@ -1,5 +1,5 @@
 /** @jest-environment jsdom */
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, within } from '@testing-library/react';
 import { useEffect } from 'react';
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
 import { UserRole } from '@exam-planner/shared-types';
@@ -116,5 +116,21 @@ describe('Navigazione del pannello segreteria', () => {
     expect(confirmSpy).toHaveBeenCalledTimes(2);
     expect(currentPath()).toBe('/secretary/materie');
     expect(screen.getByRole('heading', { name: 'Sezione materie' })).toBeTruthy();
+  });
+  it('le voci del menu hanno lo stesso nome delle pagine e indicano la sezione corrente', async () => {
+    await renderAt('/secretary');
+    const menu = screen.getByRole('navigation', { name: 'Menu segreteria' });
+    const sessionItem = within(menu).getByRole('button', { name: 'Configurazione sessione' });
+
+    expect(sessionItem.getAttribute('aria-current')).toBe('page');
+    expect(document.title).toBe('Configurazione sessione – Segreteria | Pianificatore appelli');
+    expect(within(menu).queryByRole('button', { name: 'Pagina iniziale' })).toBeNull();
+    expect(within(menu).queryByRole('button', { name: 'Visualizza appelli' })).toBeNull();
+
+    fireEvent.click(within(menu).getByRole('button', { name: 'Ricerca appelli' }));
+
+    expect(within(menu).getByRole('button', { name: 'Ricerca appelli' }).getAttribute('aria-current')).toBe('page');
+    expect(sessionItem.getAttribute('aria-current')).toBeNull();
+    expect(document.title).toBe('Ricerca appelli – Segreteria | Pianificatore appelli');
   });
 });
