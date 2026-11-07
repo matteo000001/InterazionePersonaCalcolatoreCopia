@@ -355,7 +355,7 @@ describe('Visibilità del dettaglio della giornata', () => {
 
       const notes = within(panel).getByRole('textbox', { name: 'Note appello' });
       const primary = within(panel).getByRole('button', {
-        name: status === 'occupied' ? 'Aggiorna il tuo appello' : 'Inserisci appello in questa data',
+        name: status === 'occupied' ? 'Salva note' : 'Inserisci appello in questa data',
       });
       const blocked = status !== 'available' && status !== 'occupied';
       expect(notes.hasAttribute('disabled')).toBe(blocked);
@@ -447,7 +447,7 @@ describe('Visibilità del dettaglio della giornata', () => {
     expect(within(panel).getByRole('status').textContent)
       .toBe('In questa data sono presenti appelli tuoi e di altri docenti.');
     expectDisabledWithHelp(within(panel).getByRole('textbox', { name: 'Note appello' }));
-    expectDisabledWithHelp(within(panel).getByRole('button', { name: 'Aggiorna il tuo appello' }));
+    expectDisabledWithHelp(within(panel).getByRole('button', { name: 'Salva note' }));
     expect(within(panel).getByRole('button', { name: 'Elimina' }).hasAttribute('disabled')).toBe(false);
   });
 
@@ -471,7 +471,7 @@ describe('Visibilità del dettaglio della giornata', () => {
     expect(within(panel).getByRole('status').textContent).toBe(message);
     expect(within(panel).queryByText('Server reason in English')).toBeNull();
     expectDisabledWithHelp(within(panel).getByRole('textbox', { name: 'Note appello' }));
-    for (const name of ['Salva note', 'Aggiorna il tuo appello', 'Elimina']) {
+    for (const name of ['Salva note', 'Elimina']) {
       const button = within(panel).getByRole('button', { name });
       expectDisabledWithHelp(button);
       fireEvent.click(button);
@@ -512,14 +512,11 @@ describe('Visibilità del dettaglio della giornata', () => {
     const notes = within(panel).getByRole('textbox', { name: 'Note appello' });
     expect(notes.hasAttribute('disabled')).toBe(false);
     expect((notes as HTMLTextAreaElement).value).toBe('Nota salvata');
+    // Un solo comando modifica le note e non richiede una materia nel filtro.
+    expect(within(panel).getAllByRole('button', { name: /Salva note|Aggiorna/ })).toHaveLength(1);
     expect(within(panel).getByRole('button', { name: 'Salva note' }).hasAttribute('disabled')).toBe(false);
     expect(within(panel).getByRole('button', { name: 'Elimina' }).hasAttribute('disabled')).toBe(false);
     expect(within(panel).getByRole('combobox', { name: 'Sposta a' }).hasAttribute('disabled')).toBe(false);
-    const updateButton = within(panel).getByRole('button', { name: 'Aggiorna il tuo appello' });
-    expect(updateButton.hasAttribute('disabled')).toBe(!subjectPresent);
-    if (!subjectPresent) {
-      expect(expectDisabledWithHelp(updateButton).textContent).toContain('Per modificare solo le note usa «Salva note».');
-    }
     const updatedAppointment = { ...appointment, notes: 'Nota aggiornata' };
     jest.mocked(updateTeacherAppointment).mockResolvedValue(updatedAppointment);
     jest.mocked(fetchTeacherAppointments).mockResolvedValue([updatedAppointment]);
@@ -531,11 +528,9 @@ describe('Visibilità del dettaglio della giornata', () => {
     fireEvent.click(within(panel).getByRole('button', { name: 'Salva note' }));
 
     await waitFor(() => expect(updateTeacherAppointment).toHaveBeenCalledWith('appointment-1', {
-      subjectId: 1,
-      degreeProgramId: 'course-1',
-      examDate: '2027-01-14',
       notes: 'Nota aggiornata',
     }));
+    expect(await within(panel).findByText('Note dell’appello salvate')).toBeTruthy();
   });
 
   it('spiega quando non esistono destinazioni libere senza bloccare le note modificabili', async () => {

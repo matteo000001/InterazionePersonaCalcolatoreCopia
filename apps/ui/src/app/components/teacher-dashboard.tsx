@@ -362,15 +362,15 @@ export function TeacherDashboard() {
         ? 'Seleziona una materia per inserire un appello e compilare le note.'
         : undefined
   );
+  // Per un appello già inserito l'unica modifica possibile da qui sono le note:
+  // non serve quindi una materia selezionata nel filtro.
   const primaryBlockReason = ownAppointmentOnSelectedDay
-    ? editBlockReason ?? (!hasSelectedSubject
-      ? 'Seleziona una materia per aggiornare l’appello. Per modificare solo le note usa «Salva note».'
-      : undefined)
+    ? editBlockReason
     : createBlockReason;
   const notesBlockReason = ownAppointmentOnSelectedDay ? editBlockReason : createBlockReason;
   const busyReason = isSubmitting ? 'Operazione in corso. Attendi il completamento.' : undefined;
   const actionHelp = busyReason ?? (primaryBlockReason
-    ? `${ownAppointmentOnSelectedDay ? 'Aggiornamento' : 'Inserimento'} non disponibile. ${primaryBlockReason}`
+    ? `${ownAppointmentOnSelectedDay ? 'Modifica delle note' : 'Inserimento'} non disponibile. ${primaryBlockReason}`
     : undefined);
   const planningBlockReason = selectedDay && (!selectedDay.isPlanningOpen || selectedDay.status === 'outside-planning-window')
     ? 'La finestra di pianificazione è chiusa.'
@@ -541,25 +541,6 @@ export function TeacherDashboard() {
                         <div className="inline-actions">
                           <button
                             type="button"
-                            className="secondary"
-                            onClick={() =>
-                              void handleMutation(async () => {
-                                await updateTeacherAppointment(appointment.id, {
-                                  subjectId: selectedSubjectId || appointment.subjectId,
-                                  degreeProgramId: selectedDegreeProgramId,
-                                  examDate: selectedDate,
-                                  notes,
-                                });
-                                await refreshTeacherData();
-                              }, 'Appello aggiornato')
-                            }
-                            disabled={isSubmitting || Boolean(editBlockReason)}
-                            aria-describedby={isSubmitting || editBlockReason ? 'appointment-action-help' : undefined}
-                          >
-                            Salva note
-                          </button>
-                          <button
-                            type="button"
                             className="danger"
                             onClick={() =>
                               void handleMutation(async () => {
@@ -660,23 +641,16 @@ export function TeacherDashboard() {
                   className="primary"
                   onClick={() =>
                     void handleMutation(async () => {
-                      if (selectedSubjectId === '') {
-                        throw new Error('Seleziona una materia valida');
-                      }
-
                       await updateTeacherAppointment(ownAppointmentOnSelectedDay.id, {
-                        subjectId: selectedSubjectId,
-                        degreeProgramId: selectedDegreeProgramId,
-                        examDate: selectedDate,
                         notes,
                       });
                       await refreshTeacherData();
-                    }, 'Appello aggiornato')
+                    }, 'Note dell’appello salvate')
                   }
                   disabled={isSubmitting || Boolean(primaryBlockReason)}
                   aria-describedby={actionHelp ? 'appointment-action-help' : undefined}
                 >
-                  Aggiorna il tuo appello
+                  Salva note
                 </button>
               ) : (
                 <button
