@@ -896,3 +896,7 @@ button.compact-appointment.is-current {
   padding: 10px 14px;
   font-weight: 600;
 }
+
+.readonly-value.is-placeholder {
+  color: var(--muted);
+}

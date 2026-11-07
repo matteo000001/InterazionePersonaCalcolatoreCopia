@@ -675,4 +675,24 @@ describe('Visibilità del dettaglio della giornata', () => {
       jest.useRealTimers();
     }
   });
+  it('svuota calendario e anno quando si deseleziona il corso e li ripristina riselezionandolo', async () => {
+    const panel = await renderDashboard();
+    const coursePicker = screen.getByRole('combobox', { name: 'Corso di laurea' });
+
+    fireEvent.change(coursePicker, { target: { value: '' } });
+
+    expect(screen.queryByRole('table', { name: 'gennaio 2027' })).toBeNull();
+    expect(screen.queryByRole('group', { name: 'Legenda del calendario' })).toBeNull();
+    expect(screen.getByText('Seleziona un corso di laurea per vedere il calendario degli appelli.')).toBeTruthy();
+    expect(screen.getByText('Seleziona prima il corso')).toBeTruthy();
+    expect(screen.queryByText('1° anno')).toBeNull();
+    expect(within(panel).getByText('Seleziona un corso di laurea per vedere il dettaglio delle giornate.')).toBeTruthy();
+    expect((screen.getByRole('combobox', { name: 'Materia' }) as HTMLSelectElement).value).toBe('');
+
+    fireEvent.change(coursePicker, { target: { value: 'course-2' } });
+
+    await screen.findByRole('table', { name: 'gennaio 2027' });
+    expect(fetchTeacherAvailability).toHaveBeenLastCalledWith('course-2', 'year-1');
+    expect(screen.getByText('1° anno')).toBeTruthy();
+  });
 });

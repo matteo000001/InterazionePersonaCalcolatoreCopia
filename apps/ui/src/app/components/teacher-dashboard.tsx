@@ -160,8 +160,12 @@ export function TeacherDashboard() {
 
   useEffect(() => {
     if (!user || !selectedDegreeProgramId || !selectedCourseYearId) {
-      return;
+      return undefined;
     }
+
+    // Evita che una risposta arrivata dopo un cambio di filtro sovrascriva
+    // il calendario del corso attualmente selezionato.
+    let cancelled = false;
 
     async function loadTeacherData() {
       try {
@@ -177,6 +181,10 @@ export function TeacherDashboard() {
               degreeProgramId: selectedDegreeProgramId,
             }),
           ]);
+
+        if (cancelled) {
+          return;
+        }
 
         setAppointments(loadedAppointments);
         setAvailability(loadedAvailability);
@@ -195,11 +203,17 @@ export function TeacherDashboard() {
         });
         setSelectedDate((currentDate) => currentDate ?? loadedAvailability[0]?.date);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Caricamento fallito');
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : 'Caricamento fallito');
+        }
       }
     }
 
     void loadTeacherData();
+
+    return () => {
+      cancelled = true;
+    };
   }, [selectedCourseYearId, selectedDegreeProgramId, user]);
 
   async function refreshTeacherData() {
@@ -274,7 +288,21 @@ export function TeacherDashboard() {
     setSelectedDegreeProgramId(degreeProgramId);
     setSelectedSubjectId('');
     setNotes('');
+    setMoveTargetDate('');
     setSuccessMessage(null);
+
+    if (!degreeProgramId) {
+      // Nessun corso selezionato: il calendario e i filtri dipendenti vengono
+      // svuotati, così ciò che si vede corrisponde ai filtri impostati.
+      setSelectedCourseYearId('');
+      setSubjects([]);
+      setAppointments([]);
+      setAvailability([]);
+      setSelectedDate(undefined);
+      return;
+    }
+
+    setSelectedCourseYearId((current) => current || courseYears[0]?.id || '');
   }
 
   async function handleMutation(action: () => Promise<void>, success: string) {
@@ -421,10 +449,10 @@ export function TeacherDashboard() {
 
             <label>
               Anno di frequenza
-              <span className="readonly-value">
+              <span className={`readonly-value${selectedCourseYear ? '' : ' is-placeholder'}`}>
                 {selectedCourseYear
                   ? `${selectedCourseYear.year}° anno`
-                  : selectedCourseYearId}
+                  : 'Seleziona prima il corso'}
               </span>
             </label>
 
@@ -447,17 +475,27 @@ export function TeacherDashboard() {
             </label>
           </div>
 
-          <div className="legend" role="group" aria-label="Legenda del calendario">
-            {Object.entries(calendarStatusLabels).map(([status, label]) => (
-              <span key={status} className={`legend-pill status-${status}`}>{label}</span>
-            ))}
-          </div>
+          {selectedDegreeProgramId ? (
+            <>
+              <div className="legend" role="group" aria-label="Legenda del calendario">
+                {Object.entries(calendarStatusLabels).map(([status, label]) => (
+                  <span key={status} className={`legend-pill status-${status}`}>{label}</span>
+                ))}
+              </div>
 
-          <AvailabilityCalendar
-            days={availability}
-            selectedDate={selectedDate}
-            onSelect={selectDay}
-          />
+              <AvailabilityCalendar
+                days={availability}
+                selectedDate={selectedDate}
+                onSelect={selectDay}
+              />
+            </>
+          ) : (
+            <div className="calendar-empty">
+              <p>
+                Seleziona un corso di laurea per vedere il calendario degli appelli.
+              </p>
+            </div>
+          )}
           </>
           )}
         </div>
@@ -705,7 +743,9 @@ export function TeacherDashboard() {
             <p className="empty-state">
               {visibleDegreePrograms.length === 0
                 ? 'Il dettaglio delle giornate sarà disponibile dopo che la segreteria ti avrà assegnato un corso di laurea.'
-                : 'Scegli un giorno dal calendario per vedere appelli presenti e azioni disponibili.'}
+                : !selectedDegreeProgramId
+                  ? 'Seleziona un corso di laurea per vedere il dettaglio delle giornate.'
+                  : 'Scegli un giorno dal calendario per vedere appelli presenti e azioni disponibili.'}
             </p>
           )}
         </aside>
