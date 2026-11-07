@@ -1,5 +1,5 @@
 /** @jest-environment jsdom */
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { UserRole } from '@exam-planner/shared-types';
@@ -8,6 +8,7 @@ import { api } from '../api';
 import { getAccessToken } from '../auth/auth.api';
 import {
   createTeacherAppointment,
+  deleteTeacherAppointment,
   fetchTeacherAppointments,
   fetchTeacherAvailability,
   fetchTeacherSubjects,
@@ -141,9 +142,18 @@ function setHeadingPosition(top: number, bottom: number) {
   });
 }
 
+function expectDisabledWithHelp(control: HTMLElement) {
+  expect(control.hasAttribute('disabled')).toBe(true);
+  const descriptionId = control.getAttribute('aria-describedby');
+  expect(descriptionId).toBeTruthy();
+  const description = document.getElementById(descriptionId!);
+  expect(description?.textContent?.trim()).toBeTruthy();
+  return description!;
+}
+
 describe('Visibilità del dettaglio della giornata', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    jest.resetAllMocks();
     stackedLayout = false;
     reducedMotion = false;
     jest.mocked(getAccessToken).mockReturnValue('test-token');
@@ -342,6 +352,21 @@ describe('Visibilità del dettaglio della giornata', () => {
       expect(styles[0].background).not.toBe('rgba(0, 0, 0, 0)');
       expect(styles[1]).toEqual(styles[0]);
       expect(styles[2]).toEqual(styles[0]);
+
+      const notes = within(panel).getByRole('textbox', { name: 'Note appello' });
+      const primary = within(panel).getByRole('button', {
+        name: status === 'occupied' ? 'Aggiorna il tuo appello' : 'Inserisci appello in questa data',
+      });
+      const blocked = status !== 'available' && status !== 'occupied';
+      expect(notes.hasAttribute('disabled')).toBe(blocked);
+      expect(primary.hasAttribute('disabled')).toBe(blocked);
+      if (blocked) {
+        const help = expectDisabledWithHelp(primary);
+        expect(expectDisabledWithHelp(notes)).toBe(help);
+        expect(help.textContent).toContain('Inserimento non disponibile.');
+        fireEvent.click(primary);
+        expect(createTeacherAppointment).not.toHaveBeenCalled();
+      }
     } finally {
       styleElement.remove();
     }
@@ -350,7 +375,13 @@ describe('Visibilità del dettaglio della giornata', () => {
   it('riconosce il proprio appello appena inserito senza presentarlo come errore', async () => {
     const panel = await renderDashboard();
     fireEvent.click(screen.getByRole('button', { name: /venerdì 15 gennaio 2027/ }));
-    const createdAppointment = { ...appointment, id: 'appointment-2', examDate: '2027-01-15' };
+    const notes = within(panel).getByRole('textbox', { name: 'Note appello' });
+    expect(notes.hasAttribute('disabled')).toBe(false);
+    expect((notes as HTMLTextAreaElement).value).toBe('');
+    fireEvent.change(notes, { target: { value: 'Note del nuovo appello' } });
+    const createdAppointment = {
+      ...appointment, id: 'appointment-2', examDate: '2027-01-15', notes: 'Note del nuovo appello',
+    };
     jest.mocked(createTeacherAppointment).mockResolvedValue(createdAppointment);
     jest.mocked(fetchTeacherAppointments).mockResolvedValue([appointment, createdAppointment]);
     jest.mocked(fetchTeacherAvailability).mockResolvedValue([
@@ -371,6 +402,7 @@ describe('Visibilità del dettaglio della giornata', () => {
       subjectId: 1,
       degreeProgramId: 'course-1',
       examDate: '2027-01-15',
+      notes: 'Note del nuovo appello',
     }));
     expect(within(panel).queryByText('Date already occupied')).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
@@ -394,6 +426,12 @@ describe('Visibilità del dettaglio della giornata', () => {
       ? 'In questa data è già presente un appello di un altro docente.'
       : 'In questa data sono già presenti appelli di altri docenti.');
     expect(within(panel).queryByText(ownAppointmentMessage)).toBeNull();
+    const primary = within(panel).getByRole('button', { name: 'Inserisci appello in questa data' });
+    const help = expectDisabledWithHelp(primary);
+    expect(expectDisabledWithHelp(within(panel).getByRole('textbox', { name: 'Note appello' }))).toBe(help);
+    expect(help.textContent).toContain('La data è già occupata. Scegli una data libera nel calendario.');
+    fireEvent.click(primary);
+    expect(createTeacherAppointment).not.toHaveBeenCalled();
   });
 
   it('segnala correttamente la presenza di appelli propri e di altri docenti', async () => {
@@ -408,6 +446,9 @@ describe('Visibilità del dettaglio della giornata', () => {
 
     expect(within(panel).getByRole('status').textContent)
       .toBe('In questa data sono presenti appelli tuoi e di altri docenti.');
+    expectDisabledWithHelp(within(panel).getByRole('textbox', { name: 'Note appello' }));
+    expectDisabledWithHelp(within(panel).getByRole('button', { name: 'Aggiorna il tuo appello' }));
+    expect(within(panel).getByRole('button', { name: 'Elimina' }).hasAttribute('disabled')).toBe(false);
   });
 
   it.each(constrainedOwnAppointmentCases)('mantiene visibili i vincoli $status anche con un proprio appello', async ({ status, date, planningOpen, message }) => {
@@ -429,5 +470,171 @@ describe('Visibilità del dettaglio della giornata', () => {
 
     expect(within(panel).getByRole('status').textContent).toBe(message);
     expect(within(panel).queryByText('Server reason in English')).toBeNull();
+    expectDisabledWithHelp(within(panel).getByRole('textbox', { name: 'Note appello' }));
+    for (const name of ['Salva note', 'Aggiorna il tuo appello', 'Elimina']) {
+      const button = within(panel).getByRole('button', { name });
+      expectDisabledWithHelp(button);
+      fireEvent.click(button);
+    }
+    expect(updateTeacherAppointment).not.toHaveBeenCalled();
+    expect(deleteTeacherAppointment).not.toHaveBeenCalled();
+    const movePicker = within(panel).getByRole('combobox', { name: 'Sposta a' });
+    expect(movePicker.hasAttribute('disabled')).toBe(!planningOpen);
+    if (planningOpen) {
+      fireEvent.change(movePicker, { target: { value: '2027-01-15' } });
+      expect(within(panel).getByRole('button', { name: 'Sposta appello' }).hasAttribute('disabled')).toBe(false);
+    } else {
+      expectDisabledWithHelp(movePicker);
+      expectDisabledWithHelp(within(panel).getByRole('button', { name: 'Sposta appello' }));
+    }
+  });
+
+  it('spiega perché servono una materia e una data valida prima di compilare nuove note', async () => {
+    jest.mocked(fetchTeacherSubjects).mockResolvedValue([]);
+    const panel = await renderDashboard();
+    fireEvent.click(screen.getByRole('button', { name: /venerdì 15 gennaio 2027/ }));
+
+    const primary = within(panel).getByRole('button', { name: 'Inserisci appello in questa data' });
+    const help = expectDisabledWithHelp(primary);
+    expect(expectDisabledWithHelp(within(panel).getByRole('textbox', { name: 'Note appello' }))).toBe(help);
+    expect(help.textContent).toContain('Seleziona una materia per inserire un appello e compilare le note.');
+    fireEvent.click(primary);
+    expect(createTeacherAppointment).not.toHaveBeenCalled();
+  });
+
+  it.each([true, false])('consente di salvare le note del proprio appello occupato, materia nel filtro=%s', async (subjectPresent) => {
+    if (!subjectPresent) {
+      jest.mocked(fetchTeacherSubjects).mockResolvedValue([]);
+    }
+    const panel = await renderDashboard();
+    const table = screen.getByRole('table', { name: 'gennaio 2027' });
+    fireEvent.click(within(table).getByRole('button', { name: /giovedì 14 gennaio 2027/ }));
+    const notes = within(panel).getByRole('textbox', { name: 'Note appello' });
+    expect(notes.hasAttribute('disabled')).toBe(false);
+    expect((notes as HTMLTextAreaElement).value).toBe('Nota salvata');
+    expect(within(panel).getByRole('button', { name: 'Salva note' }).hasAttribute('disabled')).toBe(false);
+    expect(within(panel).getByRole('button', { name: 'Elimina' }).hasAttribute('disabled')).toBe(false);
+    expect(within(panel).getByRole('combobox', { name: 'Sposta a' }).hasAttribute('disabled')).toBe(false);
+    const updateButton = within(panel).getByRole('button', { name: 'Aggiorna il tuo appello' });
+    expect(updateButton.hasAttribute('disabled')).toBe(!subjectPresent);
+    if (!subjectPresent) {
+      expect(expectDisabledWithHelp(updateButton).textContent).toContain('Per modificare solo le note usa «Salva note».');
+    }
+    const updatedAppointment = { ...appointment, notes: 'Nota aggiornata' };
+    jest.mocked(updateTeacherAppointment).mockResolvedValue(updatedAppointment);
+    jest.mocked(fetchTeacherAppointments).mockResolvedValue([updatedAppointment]);
+    jest.mocked(fetchTeacherAvailability).mockResolvedValue([
+      { ...availability[0], appointments: [updatedAppointment] }, availability[1],
+    ]);
+
+    fireEvent.change(notes, { target: { value: 'Nota aggiornata' } });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Salva note' }));
+
+    await waitFor(() => expect(updateTeacherAppointment).toHaveBeenCalledWith('appointment-1', {
+      subjectId: 1,
+      degreeProgramId: 'course-1',
+      examDate: '2027-01-14',
+      notes: 'Nota aggiornata',
+    }));
+  });
+
+  it('spiega quando non esistono destinazioni libere senza bloccare le note modificabili', async () => {
+    const otherAppointment = { ...appointment, id: 'other-appointment', teacherId: 2, examDate: '2027-01-15' };
+    jest.mocked(fetchTeacherAvailability).mockResolvedValue([
+      availability[0],
+      { ...availability[1], status: 'occupied', isSelectable: false, appointments: [otherAppointment] },
+    ]);
+    const panel = await renderDashboard();
+
+    const picker = within(panel).getByRole('combobox', { name: 'Sposta a' });
+    const moveButton = within(panel).getByRole('button', { name: 'Sposta appello' });
+    const help = expectDisabledWithHelp(moveButton);
+    expect(expectDisabledWithHelp(picker)).toBe(help);
+    expect(help.textContent).toBe('Non ci sono date libere disponibili per lo spostamento.');
+    expect(within(panel).getByRole('textbox', { name: 'Note appello' }).hasAttribute('disabled')).toBe(false);
+  });
+
+  it('rivalida la destinazione dopo un aggiornamento dei dati e permette di sceglierne un’altra', async () => {
+    const thirdDay: CalendarAvailabilityDay = {
+      ...availability[1], date: '2027-01-18',
+    };
+    jest.mocked(fetchTeacherAvailability).mockResolvedValue([...availability, thirdDay]);
+    const panel = await renderDashboard();
+    const picker = within(panel).getByRole('combobox', { name: 'Sposta a' });
+    const moveButton = within(panel).getByRole('button', { name: 'Sposta appello' });
+    fireEvent.change(picker, { target: { value: '2027-01-15' } });
+    expect(moveButton.hasAttribute('disabled')).toBe(false);
+    const updatedAppointment = { ...appointment, notes: 'Nota aggiornata' };
+    const otherAppointment = { ...appointment, id: 'other-appointment', teacherId: 2, examDate: '2027-01-15' };
+    jest.mocked(updateTeacherAppointment).mockResolvedValue(updatedAppointment);
+    jest.mocked(fetchTeacherAppointments).mockResolvedValue([updatedAppointment, otherAppointment]);
+    jest.mocked(fetchTeacherAvailability).mockResolvedValue([
+      { ...availability[0], appointments: [updatedAppointment] },
+      { ...availability[1], status: 'occupied', isSelectable: false, appointments: [otherAppointment] },
+      thirdDay,
+    ]);
+
+    fireEvent.change(within(panel).getByRole('textbox', { name: 'Note appello' }), {
+      target: { value: 'Nota aggiornata' },
+    });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Salva note' }));
+
+    await waitFor(() => expect(expectDisabledWithHelp(moveButton).textContent)
+      .toBe('La data scelta non è più disponibile. Scegli un’altra data libera.'));
+    jest.mocked(updateTeacherAppointment).mockClear();
+    fireEvent.click(moveButton);
+    expect(updateTeacherAppointment).not.toHaveBeenCalled();
+    expect(picker.hasAttribute('disabled')).toBe(false);
+    fireEvent.change(picker, { target: { value: '2027-01-18' } });
+    expect(moveButton.hasAttribute('disabled')).toBe(false);
+  });
+
+  it('permette di spostare un proprio appello da una festività a una data libera valida', async () => {
+    jest.mocked(fetchTeacherAvailability).mockResolvedValue([
+      { ...availability[0], status: 'holiday', isSelectable: false }, availability[1],
+    ]);
+    const panel = await renderDashboard();
+    expectDisabledWithHelp(within(panel).getByRole('textbox', { name: 'Note appello' }));
+    const movedAppointment = { ...appointment, examDate: '2027-01-15' };
+    jest.mocked(updateTeacherAppointment).mockResolvedValue(movedAppointment);
+    jest.mocked(fetchTeacherAppointments).mockResolvedValue([movedAppointment]);
+    jest.mocked(fetchTeacherAvailability).mockResolvedValue([
+      { ...availability[0], status: 'holiday', isSelectable: false, appointments: [] },
+      { ...availability[1], status: 'occupied', isSelectable: false, appointments: [movedAppointment] },
+    ]);
+
+    fireEvent.change(within(panel).getByRole('combobox', { name: 'Sposta a' }), {
+      target: { value: '2027-01-15' },
+    });
+    fireEvent.click(within(panel).getByRole('button', { name: 'Sposta appello' }));
+
+    await waitFor(() => expect(updateTeacherAppointment)
+      .toHaveBeenCalledWith('appointment-1', { examDate: '2027-01-15' }));
+    await waitFor(() => expect(within(panel).getByRole('textbox', { name: 'Note appello' })
+      .hasAttribute('disabled')).toBe(false));
+  });
+
+  it('spiega il blocco temporaneo durante il salvataggio e riabilita i controlli al termine', async () => {
+    const panel = await renderDashboard();
+    fireEvent.click(screen.getByRole('button', { name: /venerdì 15 gennaio 2027/ }));
+    let completeCreate: (value: ExamAppointment) => void;
+    const pendingCreate = new Promise<ExamAppointment>((resolve) => { completeCreate = resolve; });
+    jest.mocked(createTeacherAppointment).mockReturnValue(pendingCreate);
+    const primary = within(panel).getByRole('button', { name: 'Inserisci appello in questa data' });
+    const notes = within(panel).getByRole('textbox', { name: 'Note appello' });
+
+    fireEvent.click(primary);
+
+    try {
+      expect(expectDisabledWithHelp(primary).textContent).toBe('Operazione in corso. Attendi il completamento.');
+      expectDisabledWithHelp(notes);
+    } finally {
+      await act(async () => {
+        completeCreate({ ...appointment, id: 'appointment-2', examDate: '2027-01-15' });
+        await pendingCreate;
+      });
+    }
+    await waitFor(() => expect(primary.hasAttribute('disabled')).toBe(false));
+    expect(notes.hasAttribute('disabled')).toBe(false);
   });
 });

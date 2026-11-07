@@ -48,3 +48,26 @@ export function getCalendarDayMessage(day: CalendarAvailabilityDay, teacherId: n
 
   return message;
 }
+
+export function getCalendarDateBlockReason(day: CalendarAvailabilityDay | undefined): string | undefined {
+  if (!day) {
+    return 'Seleziona una data nel calendario.';
+  }
+  if (!day.isPlanningOpen || day.status === 'outside-planning-window') {
+    return 'La finestra di pianificazione è chiusa.';
+  }
+  if (day.status === 'weekend') {
+    return 'La data selezionata cade nel fine settimana.';
+  }
+  if (day.status === 'holiday') {
+    return 'La data selezionata è una festività esclusa dalla sessione.';
+  }
+  return undefined;
+}
+
+export function isCalendarDayAvailable(day: CalendarAvailabilityDay) {
+  return day.isPlanningOpen
+    && day.isSelectable
+    && day.status === 'available'
+    && day.appointments.length === 0;
+}

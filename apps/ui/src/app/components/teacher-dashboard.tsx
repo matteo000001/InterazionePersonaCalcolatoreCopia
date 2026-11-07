@@ -16,7 +16,12 @@ import { api } from '../api';
 import { getAccessToken } from '../auth/auth.api';
 import { usePageTitle } from '../shared/use-page-title';
 import { formatCalendarDate } from '../shared/format-calendar-date';
-import { calendarStatusLabels, getCalendarDayMessage } from '../shared/calendar-status';
+import {
+  calendarStatusLabels,
+  getCalendarDateBlockReason,
+  getCalendarDayMessage,
+  isCalendarDayAvailable,
+} from '../shared/calendar-status';
 import {
   createTeacherAppointment,
   deleteTeacherAppointment,
@@ -72,7 +77,8 @@ export function TeacherDashboard() {
   const ownAppointments = user
     ? appointments.filter((appointment) => appointment.teacherId === user.id)
     : [];
-  const moveTargetDays = availability.filter((day) => day.isSelectable);
+  const moveTargetDays = availability.filter(isCalendarDayAvailable);
+  const selectedMoveTarget = moveTargetDays.find((day) => day.date === moveTargetDate);
 
   useEffect(() => {
     if (detailRequest === 0) {
@@ -240,8 +246,7 @@ export function TeacherDashboard() {
     const ownAppointment =
       availability
         .find((day) => day.date === date)
-        ?.appointments.find((appointment) => appointment.teacherId === user?.id) ??
-      appointments.find((appointment) => appointment.teacherId === user?.id);
+        ?.appointments.find((appointment) => appointment.teacherId === user?.id);
     setNotes(ownAppointment?.notes ?? '');
     requestDayDetail();
   }
@@ -292,6 +297,45 @@ export function TeacherDashboard() {
       </main>
     );
   }
+
+  const dateBlockReason = getCalendarDateBlockReason(selectedDay);
+  const hasSelectedSubject = subjects.some((subject) => subject.id === selectedSubjectId);
+  const editBlockReason = dateBlockReason ?? (
+    ownAppointmentOnSelectedDay && selectedDay.appointments.length > 1
+      ? 'Sono presenti più appelli in questa data. Sposta o elimina il tuo appello prima di modificarlo.'
+      : undefined
+  );
+  const createBlockReason = dateBlockReason ?? (
+    selectedDay && !isCalendarDayAvailable(selectedDay)
+      ? selectedDay.appointments.length > 0 || selectedDay.status === 'occupied'
+        ? 'La data è già occupata. Scegli una data libera nel calendario.'
+        : 'La data selezionata non è disponibile. Scegli una data libera nel calendario.'
+      : !hasSelectedSubject
+        ? 'Seleziona una materia per inserire un appello e compilare le note.'
+        : undefined
+  );
+  const primaryBlockReason = ownAppointmentOnSelectedDay
+    ? editBlockReason ?? (!hasSelectedSubject
+      ? 'Seleziona una materia per aggiornare l’appello. Per modificare solo le note usa «Salva note».'
+      : undefined)
+    : createBlockReason;
+  const notesBlockReason = ownAppointmentOnSelectedDay ? editBlockReason : createBlockReason;
+  const busyReason = isSubmitting ? 'Operazione in corso. Attendi il completamento.' : undefined;
+  const actionHelp = busyReason ?? (primaryBlockReason
+    ? `${ownAppointmentOnSelectedDay ? 'Aggiornamento' : 'Inserimento'} non disponibile. ${primaryBlockReason}`
+    : undefined);
+  const planningBlockReason = selectedDay && (!selectedDay.isPlanningOpen || selectedDay.status === 'outside-planning-window')
+    ? 'La finestra di pianificazione è chiusa.'
+    : undefined;
+  const moveBlockReason = busyReason ?? planningBlockReason ?? (
+    moveTargetDays.length === 0
+      ? 'Non ci sono date libere disponibili per lo spostamento.'
+      : !selectedMoveTarget
+        ? moveTargetDate
+          ? 'La data scelta non è più disponibile. Scegli un’altra data libera.'
+          : 'Scegli una data libera nel menu «Sposta a».'
+        : undefined
+  );
 
   return (
     <main className="app-shell">
@@ -451,7 +495,8 @@ export function TeacherDashboard() {
                                 await refreshTeacherData();
                               }, 'Appello aggiornato')
                             }
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || Boolean(editBlockReason)}
+                            aria-describedby={isSubmitting || editBlockReason ? 'appointment-action-help' : undefined}
                           >
                             Salva note
                           </button>
@@ -465,7 +510,8 @@ export function TeacherDashboard() {
                                 setNotes('');
                               }, 'Appello eliminato')
                             }
-                            disabled={isSubmitting}
+                            disabled={isSubmitting || Boolean(dateBlockReason)}
+                            aria-describedby={isSubmitting || dateBlockReason ? 'appointment-action-help' : undefined}
                           >
                             Elimina
                           </button>
@@ -478,7 +524,8 @@ export function TeacherDashboard() {
                             <select
                               value={moveTargetDate}
                               onChange={(event) => setMoveTargetDate(event.target.value)}
-                              disabled={isSubmitting || moveTargetDays.length === 0}
+                              disabled={isSubmitting || Boolean(planningBlockReason) || moveTargetDays.length === 0}
+                              aria-describedby={moveBlockReason ? `appointment-move-help-${appointment.id}` : undefined}
                             >
                               <option value="">
                                 {moveTargetDays.length > 0
@@ -497,25 +544,31 @@ export function TeacherDashboard() {
                             className="secondary"
                             onClick={() =>
                               void handleMutation(async () => {
-                                if (!moveTargetDate) {
+                                if (!selectedMoveTarget) {
                                   throw new Error('Scegli la nuova data dell\'appello');
                                 }
 
                                 await updateTeacherAppointment(appointment.id, {
-                                  examDate: moveTargetDate,
+                                  examDate: selectedMoveTarget.date,
                                 });
                                 await refreshTeacherData();
-                                setSelectedDate(moveTargetDate);
+                                setSelectedDate(selectedMoveTarget.date);
                                 setMoveTargetDate('');
                                 requestDayDetail();
                               }, moveTargetDate
                                 ? `Appello spostato a ${formatCalendarDate(moveTargetDate)}, note mantenute`
                                 : 'Appello spostato, note mantenute')
                             }
-                            disabled={isSubmitting || !moveTargetDate}
+                            disabled={Boolean(moveBlockReason)}
+                            aria-describedby={moveBlockReason ? `appointment-move-help-${appointment.id}` : undefined}
                           >
                             Sposta appello
                           </button>
+                          {moveBlockReason ? (
+                            <p className="appointment-action-help" id={`appointment-move-help-${appointment.id}`}>
+                              {moveBlockReason}
+                            </p>
+                          ) : null}
                         </div>
                       ) : null}
                     </article>
@@ -532,8 +585,16 @@ export function TeacherDashboard() {
                   onChange={(event) => setNotes(event.target.value)}
                   placeholder="Inserisci eventuali dettagli utili"
                   rows={2}
+                  disabled={isSubmitting || Boolean(notesBlockReason)}
+                  aria-describedby={isSubmitting || notesBlockReason ? 'appointment-action-help' : undefined}
                 />
               </label>
+
+              {actionHelp ? (
+                <p id="appointment-action-help" className="appointment-action-help" aria-live="polite">
+                  {actionHelp}
+                </p>
+              ) : null}
 
               {ownAppointmentOnSelectedDay ? (
                 <button
@@ -554,7 +615,8 @@ export function TeacherDashboard() {
                       await refreshTeacherData();
                     }, 'Appello aggiornato')
                   }
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || Boolean(primaryBlockReason)}
+                  aria-describedby={actionHelp ? 'appointment-action-help' : undefined}
                 >
                   Aggiorna il tuo appello
                 </button>
@@ -582,11 +644,8 @@ export function TeacherDashboard() {
                       setNotes('');
                     }, 'Appello inserito correttamente')
                   }
-                  disabled={
-                    isSubmitting ||
-                    !selectedDay.isSelectable ||
-                    selectedSubjectId === ''
-                  }
+                  disabled={isSubmitting || Boolean(primaryBlockReason)}
+                  aria-describedby={actionHelp ? 'appointment-action-help' : undefined}
                 >
                   Inserisci appello in questa data
                 </button>
