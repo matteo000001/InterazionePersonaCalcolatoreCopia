@@ -70,6 +70,7 @@ export function TeacherDashboard() {
   const selectedCourseYear = courseYears.find(
     (year) => year.id === selectedCourseYearId
   );
+  const selectedSubject = subjects.find((subject) => subject.id === selectedSubjectId);
   const selectedDay = availability.find((day) => day.date === selectedDate);
   const ownAppointmentOnSelectedDay = selectedDay?.appointments.find(
     (appointment) => appointment.teacherId === user?.id
@@ -384,7 +385,7 @@ export function TeacherDashboard() {
             </div>
           ) : (
           <>
-          <div className="filters">
+          <div className="filters teacher-filters">
             <label>
               Corso di laurea
               <select
@@ -413,6 +414,7 @@ export function TeacherDashboard() {
               Materia
               <select
                 value={selectedSubjectId}
+                title={selectedSubject?.name}
                 onChange={(event) =>
                   selectSubject(event.target.value ? Number(event.target.value) : '')
                 }

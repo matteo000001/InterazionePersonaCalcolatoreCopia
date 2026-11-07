@@ -432,6 +432,18 @@ label {
   flex: 1 1 220px;
 }
 
+.teacher-filters > label {
+  grid-template-columns: minmax(0, 1fr);
+  max-width: 100%;
+}
+
+.teacher-filters select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  text-overflow: ellipsis;
+}
+
 input,
 select,
 textarea,
