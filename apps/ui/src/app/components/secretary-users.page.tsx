@@ -9,6 +9,7 @@ import {
 } from './secretary.api';
 import { defaultUserForm, UserFormState } from './secretary-dashboard.types';
 import { compareText, ListToolbar, matchesSearch } from './list-toolbar';
+import { CheckboxGroup } from './checkbox-group';
 
 type UserFormField = 'name' | 'email' | 'password';
 type UserFormErrors = Partial<Record<UserFormField, string>>;
@@ -153,14 +154,6 @@ export function SecretaryUsersPage({
       delete next[field as UserFormField];
       return next;
     });
-  }
-
-  function selectManagedDegreePrograms(options: HTMLSelectElement) {
-    const selectedIds = Array.from(options.selectedOptions).map(
-      (option) => option.value
-    );
-
-    updateUserFormField('managedDegreeProgramIds', selectedIds);
   }
 
   async function refreshUsers() {
@@ -412,22 +405,19 @@ export function SecretaryUsersPage({
           </div>
 
           {userForm.role === UserRole.TEACHER ? (
-            <label>
-              Corsi gestiti
-              <select
-                multiple
-                value={userForm.managedDegreeProgramIds}
-                onChange={(event) =>
-                  selectManagedDegreePrograms(event.currentTarget)
-                }
-              >
-                {degreePrograms.map((program) => (
-                  <option key={program.id} value={program.id}>
-                    {program.code} - {program.name}
-                  </option>
-                ))}
-              </select>
-            </label>
+            <CheckboxGroup
+              legend="Corsi gestiti"
+              hint="Seleziona uno o più corsi di laurea su cui il docente potrà pianificare gli appelli."
+              emptyMessage="Non ci sono ancora corsi di laurea: creali nella sezione «Corsi di laurea»."
+              options={degreePrograms.map((program) => ({
+                value: program.id,
+                label: `${program.code} - ${program.name}`,
+              }))}
+              selectedValues={userForm.managedDegreeProgramIds}
+              onChange={(selectedIds) =>
+                updateUserFormField('managedDegreeProgramIds', selectedIds)
+              }
+            />
           ) : null}
 
           <div className="inline-actions">

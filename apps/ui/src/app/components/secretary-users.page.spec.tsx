@@ -1,5 +1,5 @@
 /** @jest-environment jsdom */
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { User, UserRole } from '@exam-planner/shared-types';
 import {
   createSecretaryUser,
@@ -104,5 +104,30 @@ describe('Utenti', () => {
       password: 'Password1!',
     })));
     await waitFor(() => expect(errorOf(screen.getByRole('textbox', { name: 'E-mail' }))).toBe('Esiste già un utente con questa e-mail.'));
+  });
+  it('assegna i corsi gestiti con caselle di spunta: un clic aggiunge o toglie un solo corso', async () => {
+    await renderPage();
+    const group = screen.getByRole('group', { name: 'Corsi gestiti' });
+    expect(within(group).queryByRole('listbox')).toBeNull();
+    const informatica = within(group).getByRole('checkbox', { name: 'L-8 - Ingegneria Informatica' });
+    const gestionale = within(group).getByRole('checkbox', { name: 'L-9 - Ingegneria Gestionale' });
+
+    fireEvent.click(informatica);
+    fireEvent.click(gestionale);
+    expect(within(group).getByText('2 corsi selezionati.')).toBeTruthy();
+    fireEvent.click(informatica);
+
+    expect((informatica as HTMLInputElement).checked).toBe(false);
+    expect((gestionale as HTMLInputElement).checked).toBe(true);
+    expect(within(group).getByText('1 corso selezionato.')).toBeTruthy();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Nome' }), { target: { value: 'Anna Verdi' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'E-mail' }), { target: { value: 'anna.verdi@example.com' } });
+    fireEvent.change(screen.getByLabelText(/^Password/), { target: { value: 'Password1!' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aggiungi utente' }));
+
+    await waitFor(() => expect(createSecretaryUser).toHaveBeenCalledWith(expect.objectContaining({
+      managedDegreeProgramIds: ['ingGest'],
+    })));
   });
 });

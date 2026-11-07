@@ -21,6 +21,7 @@ import {
   SubjectFormState,
 } from './secretary-dashboard.types';
 import { compareText, ListToolbar, matchesSearch } from './list-toolbar';
+import { CheckboxGroup } from './checkbox-group';
 
 type SecretarySubjectsPageProps = {
   onDirtyChange?: (dirty: boolean) => void;
@@ -94,11 +95,7 @@ export function SecretarySubjectsPage({
     }));
   }
 
-  function selectSubjectDegreePrograms(options: HTMLSelectElement) {
-    const selectedIds = Array.from(options.selectedOptions).map(
-      (option) => option.value
-    );
-
+  function selectSubjectDegreePrograms(selectedIds: string[]) {
     updateSubjectFormField('degreeProgramIds', selectedIds);
 
     const selectedCourseYear = courseYears.find(
@@ -302,22 +299,25 @@ export function SecretarySubjectsPage({
             </div>
           ) : null}
 
-          <label>
-            Corsi di laurea
-            <select
-              multiple
-              value={subjectForm.degreeProgramIds}
-              onChange={(event) =>
-                selectSubjectDegreePrograms(event.currentTarget)
-              }
-            >
-              {subjectDegreeProgramOptions.map((program) => (
-                <option key={program.id} value={program.id}>
-                  {program.code} - {program.name}
-                </option>
-              ))}
-            </select>
-          </label>
+          <CheckboxGroup
+            legend="Corsi di laurea"
+            hint={
+              selectedSubjectTeacher
+                ? `Seleziona uno o più corsi di laurea in cui è insegnata la materia (tra quelli gestiti da ${selectedSubjectTeacher.name}).`
+                : 'Seleziona uno o più corsi di laurea in cui è insegnata la materia.'
+            }
+            emptyMessage={
+              selectedTeacherHasNoPrograms
+                ? 'Il docente scelto non ha corsi di laurea assegnati.'
+                : 'Non ci sono ancora corsi di laurea: creali nella sezione «Corsi di laurea».'
+            }
+            options={subjectDegreeProgramOptions.map((program) => ({
+              value: program.id,
+              label: `${program.code} - ${program.name}`,
+            }))}
+            selectedValues={subjectForm.degreeProgramIds}
+            onChange={selectSubjectDegreePrograms}
+          />
 
           <label>
             Anno di frequenza

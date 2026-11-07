@@ -1068,3 +1068,49 @@ textarea[aria-invalid='true'] {
 .form-grid > label {
   align-content: start;
 }
+
+/* Selezione multipla con caselle di spunta (corsi gestiti, corsi della materia). */
+.checkbox-group {
+  display: grid;
+  gap: 8px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.6);
+  min-width: 0;
+}
+
+.checkbox-group legend {
+  padding: 0 6px;
+  font-weight: 600;
+}
+
+.checkbox-group__options {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 6px 16px;
+}
+
+.checkbox-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+  padding: 6px 4px;
+  font-weight: 400;
+  cursor: pointer;
+}
+
+.checkbox-option input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  padding: 0;
+  flex-shrink: 0;
+  accent-color: var(--accent);
+}
+
+.checkbox-group__count {
+  font-size: 0.8rem;
+}
