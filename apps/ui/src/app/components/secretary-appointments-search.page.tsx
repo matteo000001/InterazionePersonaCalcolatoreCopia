@@ -309,7 +309,7 @@ export function SecretaryAppointmentsSearchPage() {
                   );
 
                 return (
-                  <div className="summary-row" key={appointment.id}>
+                  <div className="summary-row list-row list-row--no-actions" key={appointment.id}>
                     <span>
                       {appointment.examDate}
                       <br />

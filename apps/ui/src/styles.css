@@ -1114,3 +1114,42 @@ textarea[aria-invalid='true'] {
 .checkbox-group__count {
   font-size: 0.8rem;
 }
+
+/*
+ * Righe degli elenchi della segreteria: colonne a larghezza fissa, così la
+ * seconda colonna e i pulsanti restano allineati qualunque sia la lunghezza
+ * del nome nella prima colonna.
+ */
+.summary-row.list-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 190px;
+  align-items: start;
+  gap: 16px;
+}
+
+.summary-row.list-row--no-actions {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+}
+
+.list-row > span {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.list-row > .inline-actions {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+@media (max-width: 600px) {
+  .summary-row.list-row,
+  .summary-row.list-row--no-actions {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+  }
+
+  .list-row > .inline-actions {
+    justify-content: flex-start;
+  }
+}

@@ -1,5 +1,7 @@
 /** @jest-environment jsdom */
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { User, UserRole } from '@exam-planner/shared-types';
 import {
   createSecretaryUser,
@@ -158,5 +160,16 @@ describe('Utenti', () => {
     confirmSpy.mockReturnValue(true);
     fireEvent.click(deleteButton);
     await waitFor(() => expect(deleteSecretaryUser).toHaveBeenCalledWith(1));
+  });
+  it('impagina le righe dell’elenco su colonne a larghezza fissa', async () => {
+    await renderPage();
+    const stylesheet = readFileSync(join(__dirname, '../../styles.css'), 'utf8');
+    const rows = screen.getAllByText(/@example\.com/).map((element) => element.closest('.summary-row'));
+
+    expect(rows).toHaveLength(2);
+    for (const row of rows) {
+      expect(row?.classList.contains('list-row')).toBe(true);
+    }
+    expect(stylesheet).toMatch(/\.summary-row\.list-row \{[^}]*display: grid;[^}]*grid-template-columns: minmax\(0, 1fr\) minmax\(0, 1fr\) 190px;/);
   });
 });

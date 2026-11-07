@@ -290,7 +290,7 @@ export function SecretaryDegreeProgramsPage({
               <p className="empty-state">Nessun corso corrisponde alla ricerca.</p>
             ) : null}
             {visibleDegreePrograms.map((program) => (
-              <div className="summary-row" key={program.id}>
+              <div className="summary-row list-row" key={program.id}>
                 <span>
                   {program.code}
                   <br />

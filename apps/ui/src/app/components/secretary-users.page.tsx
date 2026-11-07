@@ -505,7 +505,7 @@ export function SecretaryUsersPage({
               <p className="empty-state">Nessun utente corrisponde ai filtri.</p>
             ) : null}
             {visibleUsers.map((currentUser) => (
-              <div className="summary-row" key={currentUser.id}>
+              <div className="summary-row list-row" key={currentUser.id}>
                 <span>
                   {currentUser.name}
                   {currentUser.id === currentUserId ? ' (tu)' : ''}

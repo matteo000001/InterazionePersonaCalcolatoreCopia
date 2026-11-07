@@ -435,7 +435,7 @@ export function SecretarySubjectsPage({
               );
 
               return (
-                <div className="summary-row" key={subject.id}>
+                <div className="summary-row list-row" key={subject.id}>
                   <span>
                     {subject.name}
                     <br />
