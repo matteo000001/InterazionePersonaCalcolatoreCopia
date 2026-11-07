@@ -17,6 +17,8 @@ import {
 } from './secretary.api';
 import {
   defaultSubjectForm,
+  getCourseYearLabel,
+  getDegreeProgramNames,
   getSubjectMaxCourseYear,
   SubjectFormState,
 } from './secretary-dashboard.types';
@@ -411,12 +413,9 @@ export function SecretarySubjectsPage({
               const teacher = users.find(
                 (currentUser) => currentUser.id === subject.teacherId
               );
-              const subjectPrograms = degreePrograms
-                .filter((program) => subject.degreeProgramIds.includes(program.id))
-                .map((program) => program.id)
-                .join(', ');
-              const subjectYear = courseYears.find(
-                (year) => year.id === subject.courseYearId
+              const subjectPrograms = getDegreeProgramNames(
+                subject.degreeProgramIds,
+                degreePrograms
               );
 
               return (
@@ -427,9 +426,9 @@ export function SecretarySubjectsPage({
                     {teacher?.name ?? 'Materia scoperta'}
                   </span>
                   <span>
-                    {subjectPrograms || '-'}
+                    {subjectPrograms || 'Nessun corso di laurea'}
                     <br />
-                    {subjectYear ? `${subjectYear.year}° anno` : subject.courseYearId}
+                    {getCourseYearLabel(subject.courseYearId, courseYears)}
                   </span>
                   <span className="inline-actions">
                     <button

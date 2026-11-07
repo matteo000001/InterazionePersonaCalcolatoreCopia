@@ -85,4 +85,12 @@ describe('Materie', () => {
       courseYearId: 'year-1',
     }));
   });
+  it('mostra nell’elenco i nomi dei corsi e l’anno invece dei codici interni', async () => {
+    await renderPage();
+    const row = screen.getByText(/Analisi 2/).closest('.summary-row') as HTMLElement;
+
+    expect(within(row).getByText(/Ingegneria Informatica \(L-8\), Ingegneria Gestionale \(L-9\)/)).toBeTruthy();
+    expect(within(row).getByText(/2° anno/)).toBeTruthy();
+    expect(within(row).queryByText(/ingInf|ingGest|year-2/)).toBeNull();
+  });
 });

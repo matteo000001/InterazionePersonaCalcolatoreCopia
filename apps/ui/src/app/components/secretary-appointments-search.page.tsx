@@ -17,6 +17,8 @@ import {
 import {
   AppointmentSearchState,
   defaultAppointmentSearch,
+  getCourseYearLabel,
+  getDegreeProgramNames,
   getSubjectMaxCourseYear,
 } from './secretary-dashboard.types';
 
@@ -311,12 +313,14 @@ export function SecretaryAppointmentsSearchPage() {
                     <span>
                       {appointment.examDate}
                       <br />
-                      {teacher?.name ?? `Docente ${appointment.teacherId}`}
+                      {teacher?.name ?? 'Docente non più presente'}
                     </span>
                     <span>
-                      {subject?.name ?? `Materia ${appointment.subjectId}`}
+                      {subject?.name ?? 'Materia non più presente'}
                       <br />
-                      {appointment.degreeProgramId} / {appointment.courseYearId}
+                      {getDegreeProgramNames([appointment.degreeProgramId], degreePrograms)}
+                      {' – '}
+                      {getCourseYearLabel(appointment.courseYearId, courseYears)}
                     </span>
                   </div>
                 );

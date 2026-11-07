@@ -7,7 +7,12 @@ import {
   fetchSecretaryUsers,
   updateSecretaryUser,
 } from './secretary.api';
-import { defaultUserForm, UserFormState } from './secretary-dashboard.types';
+import {
+  defaultUserForm,
+  getDegreeProgramNames,
+  getUserRoleLabel,
+  UserFormState,
+} from './secretary-dashboard.types';
 import { compareText, ListToolbar, matchesSearch } from './list-toolbar';
 import { CheckboxGroup } from './checkbox-group';
 
@@ -493,9 +498,16 @@ export function SecretaryUsersPage({
                   {currentUser.email}
                 </span>
                 <span>
-                  {currentUser.role}
-                  <br />
-                  {(currentUser.managedDegreeProgramIds ?? []).join(', ') || '-'}
+                  {getUserRoleLabel(currentUser.role)}
+                  {currentUser.role === UserRole.TEACHER ? (
+                    <>
+                      <br />
+                      {getDegreeProgramNames(
+                        currentUser.managedDegreeProgramIds ?? [],
+                        degreePrograms
+                      ) || 'Nessun corso assegnato'}
+                    </>
+                  ) : null}
                 </span>
                 <span className="inline-actions">
                   <button

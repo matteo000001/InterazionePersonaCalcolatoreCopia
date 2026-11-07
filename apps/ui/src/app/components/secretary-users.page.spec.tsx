@@ -130,4 +130,17 @@ describe('Utenti', () => {
       managedDegreeProgramIds: ['ingGest'],
     })));
   });
+  it('mostra nell’elenco ruoli e corsi con nomi leggibili invece dei codici interni', async () => {
+    await renderPage();
+    const rowOf = (email: RegExp) => screen.getByText(email).closest('.summary-row') as HTMLElement;
+    const teacherRow = rowOf(/mario\.bianchi@example\.com/);
+    const secretaryRow = rowOf(/giulia\.ferraro@example\.com/);
+
+    expect(within(teacherRow).getByText(/^Docente/)).toBeTruthy();
+    expect(within(teacherRow).getByText(/Ingegneria Informatica \(L-8\), Ingegneria Gestionale \(L-9\)/)).toBeTruthy();
+    expect(within(secretaryRow).getByText(/^Segreteria/)).toBeTruthy();
+    for (const code of ['teacher', 'secretary', 'ingInf', 'ingGest']) {
+      expect(screen.queryByText(new RegExp(`\\b${code}\\b`))).toBeNull();
+    }
+  });
 });

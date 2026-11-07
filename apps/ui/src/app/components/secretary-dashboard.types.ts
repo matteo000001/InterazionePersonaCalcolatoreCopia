@@ -86,6 +86,33 @@ export function getDegreeProgramDuration(type: DegreeProgramType) {
   return type === 'triennale' ? 3 : 2;
 }
 
+// Etichette leggibili per gli elenchi: la segreteria non deve ricordare a
+// cosa corrispondono gli identificativi interni (ruoli, corsi, anni).
+export function getUserRoleLabel(role: UserRole) {
+  return role === UserRole.SECRETARY ? 'Segreteria' : 'Docente';
+}
+
+export function getDegreeProgramLabel(program: DegreeProgram) {
+  return `${program.name} (${program.code})`;
+}
+
+export function getDegreeProgramNames(
+  degreeProgramIds: string[],
+  degreePrograms: DegreeProgram[]
+) {
+  return degreeProgramIds
+    .map((degreeProgramId) => {
+      const program = degreePrograms.find(({ id }) => id === degreeProgramId);
+      return program ? getDegreeProgramLabel(program) : 'Corso eliminato';
+    })
+    .join(', ');
+}
+
+export function getCourseYearLabel(courseYearId: string, courseYears: CourseYear[]) {
+  const courseYear = courseYears.find(({ id }) => id === courseYearId);
+  return courseYear ? `${courseYear.year}° anno` : 'Anno non disponibile';
+}
+
 export function getDegreeProgramTypeLabel(program: DegreeProgram) {
   const years = program.durationYears;
 
