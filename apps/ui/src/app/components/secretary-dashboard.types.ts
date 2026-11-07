@@ -32,7 +32,6 @@ export type DegreeProgramType = 'triennale' | 'magistrale';
 export type DegreeProgramYearCount = 2 | 3;
 
 export type DegreeProgramFormState = {
-  id: string;
   code: string;
   name: string;
   type: DegreeProgramType;
@@ -69,7 +68,6 @@ export const defaultSubjectForm: SubjectFormState = {
 };
 
 export const defaultDegreeProgramForm: DegreeProgramFormState = {
-  id: '',
   code: '',
   name: '',
   type: 'triennale',

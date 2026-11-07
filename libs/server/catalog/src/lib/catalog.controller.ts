@@ -45,7 +45,8 @@ export class CatalogController {
       properties: {
         id: {
           type: 'string',
-          example: 'ingGest',
+          example: 'ingegneria-gestionale',
+          description: 'Optional: generated from the name when omitted',
         },
         code: {
           type: 'string',
@@ -61,7 +62,7 @@ export class CatalogController {
           example: 3,
         },
       },
-      required: ['id', 'code', 'name', 'durationYears'],
+      required: ['code', 'name', 'durationYears'],
     },
   })
   @ApiCreatedResponse({

@@ -25,7 +25,7 @@ export class CatalogRepository {
   }
 
   createDegreeProgram(
-    dto: CreateDegreeProgramDto
+    dto: CreateDegreeProgramDto & { id: string }
   ): Promise<DegreeProgramEntity> {
     const degreeProgram = this.repository.create({
       id: dto.id.trim(),

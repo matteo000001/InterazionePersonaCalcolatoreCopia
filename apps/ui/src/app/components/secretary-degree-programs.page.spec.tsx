@@ -53,4 +53,20 @@ describe('Corsi di laurea', () => {
     fireEvent.click(within(row).getByRole('button', { name: 'Elimina' }));
     await waitFor(() => expect(deleteSecretaryDegreeProgram).toHaveBeenCalledWith('ingGest'));
   });
+  it('crea un corso senza chiedere l’identificativo tecnico e non lo mostra nell’elenco', async () => {
+    await renderPage();
+
+    expect(screen.queryByRole('textbox', { name: 'Identificativo' })).toBeNull();
+    expect(screen.queryByText(/ingInf|ingGest/)).toBeNull();
+
+    fireEvent.change(screen.getByRole('textbox', { name: 'Codice' }), { target: { value: 'L-8' } });
+    fireEvent.change(screen.getByRole('textbox', { name: 'Nome' }), { target: { value: 'Ingegneria Elettronica' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aggiungi corso di laurea' }));
+
+    await waitFor(() => expect(createSecretaryDegreeProgram).toHaveBeenCalledWith({
+      code: 'L-8',
+      name: 'Ingegneria Elettronica',
+      durationYears: 3,
+    }));
+  });
 });

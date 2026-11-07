@@ -77,25 +77,20 @@ export function SecretaryDegreeProgramsPage({
     setSuccessMessage(null);
 
     try {
-      const degreeProgramId = degreeProgramForm.id.trim();
       const degreeProgramCode = degreeProgramForm.code.trim();
       const degreeProgramName = degreeProgramForm.name.trim();
 
-      if (!degreeProgramId) {
-        throw new Error('Inserisci un identificativo valido');
-      }
-
       const alreadyExists = degreePrograms.some(
         (program) =>
-          program.id.trim().toLowerCase() === degreeProgramId.toLowerCase()
+          program.code.trim().toLowerCase() === degreeProgramCode.toLowerCase() &&
+          program.name.trim().toLowerCase() === degreeProgramName.toLowerCase()
       );
 
       if (alreadyExists) {
-        throw new Error('Esiste già un corso di laurea con questo identificativo');
+        throw new Error('Esiste già un corso di laurea con questo codice e questo nome');
       }
 
       await createSecretaryDegreeProgram({
-        id: degreeProgramId,
         code: degreeProgramCode,
         name: degreeProgramName,
         durationYears: getDegreeProgramDuration(degreeProgramForm.type),
@@ -147,7 +142,7 @@ export function SecretaryDegreeProgramsPage({
 
   const visibleDegreePrograms = degreePrograms
     .filter((program) =>
-      matchesSearch(programSearch, program.code, program.name, program.id)
+      matchesSearch(programSearch, program.code, program.name)
     )
     .sort((first, second) =>
       programSort === 'code'
@@ -180,17 +175,6 @@ export function SecretaryDegreeProgramsPage({
           </div>
 
           <div className="form-grid">
-            <label>
-              Identificativo
-              <input
-                value={degreeProgramForm.id}
-                onChange={(event) =>
-                  updateDegreeProgramFormField('id', event.target.value)
-                }
-                placeholder="ingeElet"
-              />
-            </label>
-
             <label>
               Codice
               <input
@@ -270,7 +254,7 @@ export function SecretaryDegreeProgramsPage({
           <ListToolbar
             search={programSearch}
             onSearchChange={setProgramSearch}
-            searchPlaceholder="Codice, nome o identificativo"
+            searchPlaceholder="Codice o nome"
             sort={programSort}
             onSortChange={setProgramSort}
             sortOptions={[
@@ -291,11 +275,7 @@ export function SecretaryDegreeProgramsPage({
             ) : null}
             {visibleDegreePrograms.map((program) => (
               <div className="summary-row list-row" key={program.id}>
-                <span>
-                  {program.code}
-                  <br />
-                  {program.id}
-                </span>
+                <span>{program.code}</span>
                 <span>
                   {program.name}
                   <br />

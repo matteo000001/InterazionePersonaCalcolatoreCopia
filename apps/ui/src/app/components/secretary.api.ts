@@ -41,8 +41,8 @@ export type CreateSecretarySubjectPayload = {
 
 export type UpdateSecretarySubjectPayload = Partial<CreateSecretarySubjectPayload>;
 
+// L'identificativo interno viene generato dal server a partire dal nome.
 export type CreateSecretaryDegreeProgramPayload = {
-  id: string;
   code: string;
   name: string;
   durationYears: number;

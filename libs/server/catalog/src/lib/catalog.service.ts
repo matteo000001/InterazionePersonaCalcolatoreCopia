@@ -3,6 +3,20 @@ import { CatalogRepository } from './catalog.repository';
 import { CreateCourseYearDto } from './dto/create-course-year.dto';
 import { CreateDegreeProgramDto } from './dto/create-degree-program.dto';
 
+// Ricava un identificativo leggibile dal nome: «Ingegneria Elettronica» →
+// «ingegneria-elettronica».
+function toDegreeProgramId(name: string) {
+  const slug = name
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60);
+
+  return slug.length >= 2 ? slug : 'corso';
+}
+
 @Injectable()
 export class CatalogService {
   constructor(private readonly catalogRepository: CatalogRepository) {}
@@ -46,13 +60,37 @@ export class CatalogService {
   }
 
   async createDegreeProgram(dto: CreateDegreeProgramDto) {
-    const existing = await this.catalogRepository.findDegreeProgramById(dto.id);
+    const requestedId = dto.id?.trim();
 
-    if (existing) {
-      throw new ConflictException('degree program id already in use');
+    if (requestedId) {
+      const existing = await this.catalogRepository.findDegreeProgramById(requestedId);
+
+      if (existing) {
+        throw new ConflictException(
+          'Esiste già un corso di laurea con questo identificativo'
+        );
+      }
+
+      return this.catalogRepository.createDegreeProgram({ ...dto, id: requestedId });
     }
 
-    return this.catalogRepository.createDegreeProgram(dto);
+    return this.catalogRepository.createDegreeProgram({
+      ...dto,
+      id: await this.generateDegreeProgramId(dto.name),
+    });
+  }
+
+  private async generateDegreeProgramId(name: string) {
+    const baseId = toDegreeProgramId(name);
+    let candidate = baseId;
+    let suffix = 2;
+
+    while (await this.catalogRepository.findDegreeProgramById(candidate)) {
+      candidate = `${baseId}-${suffix}`;
+      suffix += 1;
+    }
+
+    return candidate;
   }
 
   async deleteDegreeProgram(id: string) {
