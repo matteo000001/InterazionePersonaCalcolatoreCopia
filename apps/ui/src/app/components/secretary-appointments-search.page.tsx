@@ -223,7 +223,7 @@ export function SecretaryAppointmentsSearchPage() {
                 </option>
                 {appointmentCourseYearOptions.map((year) => (
                   <option key={year.id} value={year.id}>
-                    {year.year} anno
+                    {year.year}° anno
                   </option>
                 ))}
               </select>

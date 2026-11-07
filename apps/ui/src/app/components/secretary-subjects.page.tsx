@@ -297,7 +297,7 @@ export function SecretarySubjectsPage({
           {selectedTeacherHasNoPrograms ? (
             <div className="alert error" role="alert">
               {selectedSubjectTeacher?.name} non ha corsi di laurea assegnati, quindi
-              non e possibile associargli una materia. Assegna prima i corsi al
+              non è possibile associargli una materia. Assegna prima i corsi al
               docente nella sezione «Utenti» (Modifica &gt; Corsi gestiti).
             </div>
           ) : null}
@@ -335,7 +335,7 @@ export function SecretarySubjectsPage({
               </option>
               {subjectCourseYearOptions.map((year) => (
                 <option key={year.id} value={year.id}>
-                  {year.year} anno
+                  {year.year}° anno
                 </option>
               ))}
             </select>
@@ -429,7 +429,7 @@ export function SecretarySubjectsPage({
                   <span>
                     {subjectPrograms || '-'}
                     <br />
-                    {subjectYear ? `${subjectYear.year} anno` : subject.courseYearId}
+                    {subjectYear ? `${subjectYear.year}° anno` : subject.courseYearId}
                   </span>
                   <span className="inline-actions">
                     <button

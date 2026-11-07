@@ -285,7 +285,7 @@ export function TeacherDashboard() {
       <main className="app-shell">
         <section className="panel">
           <p className="eyebrow">Dati calendario</p>
-          <h2>Il calendario non puo essere costruito</h2>
+          <h2>Il calendario non può essere costruito</h2>
           <p className="hero-copy">
             Verifica che esistano una sessione corrente, almeno un corso di laurea
             e almeno un anno di corso.
@@ -404,7 +404,7 @@ export function TeacherDashboard() {
               Anno di frequenza
               <span className="readonly-value">
                 {selectedCourseYear
-                  ? `${selectedCourseYear.year} anno`
+                  ? `${selectedCourseYear.year}° anno`
                   : selectedCourseYearId}
               </span>
             </label>
@@ -678,7 +678,7 @@ export function TeacherDashboard() {
           ) : (
             <p className="empty-state">
               {visibleDegreePrograms.length === 0
-                ? 'Il dettaglio delle giornate sara disponibile dopo che la segreteria ti avra assegnato un corso di laurea.'
+                ? 'Il dettaglio delle giornate sarà disponibile dopo che la segreteria ti avrà assegnato un corso di laurea.'
                 : 'Scegli un giorno dal calendario per vedere appelli presenti e azioni disponibili.'}
             </p>
           )}

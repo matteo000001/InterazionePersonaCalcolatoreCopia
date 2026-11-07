@@ -145,8 +145,8 @@ export function SecretaryHomePage() {
             </div>
           </div>
           <div className="alert error" role="alert">
-            Non e stato possibile leggere la configurazione della sessione corrente
-            ({loadError}). La configurazione salvata non e stata cancellata: riprova
+            Non è stato possibile leggere la configurazione della sessione corrente
+            ({loadError}). La configurazione salvata non è stata cancellata: riprova
             prima di modificarla o di crearne una nuova.
           </div>
           <button
@@ -250,7 +250,7 @@ export function SecretaryHomePage() {
         ) : null}
 
         <label className="holiday-field">
-          Festivita escluse opzionali
+          Festività escluse (opzionali)
           <input
             type="text"
             value={holidayInput}

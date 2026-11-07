@@ -91,7 +91,7 @@ export function SecretaryDegreeProgramsPage({
       );
 
       if (alreadyExists) {
-        throw new Error('Esiste gia un corso di laurea con questo identificativo');
+        throw new Error('Esiste già un corso di laurea con questo identificativo');
       }
 
       await createSecretaryDegreeProgram({
@@ -231,7 +231,7 @@ export function SecretaryDegreeProgramsPage({
               <span>Anni disponibili</span>
               <span>
                 {degreeProgramPreviewYears
-                  .map((year) => `${year} anno`)
+                  .map((year) => `${year}° anno`)
                   .join(', ')}
               </span>
             </div>
