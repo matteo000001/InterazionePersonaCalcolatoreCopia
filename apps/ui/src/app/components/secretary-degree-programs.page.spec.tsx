@@ -4,6 +4,7 @@ import {
   createSecretaryDegreeProgram,
   deleteSecretaryDegreeProgram,
   fetchSecretaryDegreePrograms,
+  updateSecretaryDegreeProgram,
 } from './secretary.api';
 import { SecretaryDegreeProgramsPage } from './secretary-degree-programs.page';
 
@@ -68,5 +69,42 @@ describe('Corsi di laurea', () => {
       name: 'Ingegneria Elettronica',
       durationYears: 3,
     }));
+  });
+  it('permette di modificare un corso esistente come utenti e materie', async () => {
+    jest.mocked(updateSecretaryDegreeProgram).mockResolvedValue({
+      id: 'ingGest', code: 'L-9', name: 'Ingegneria Gestionale', durationYears: 3,
+    });
+    await renderPage();
+    const row = rowOf(/Ingegneria Gestionale/);
+
+    fireEvent.click(within(row).getByRole('button', { name: 'Modifica' }));
+
+    expect(screen.getByRole('heading', { name: 'Modifica corso di laurea' })).toBeTruthy();
+    const name = screen.getByRole('textbox', { name: 'Nome' }) as HTMLInputElement;
+    expect(name.value).toBe('Ingegneria Gestionale');
+    expect((screen.getByRole('textbox', { name: 'Codice' }) as HTMLInputElement).value).toBe('L-9');
+
+    fireEvent.change(name, { target: { value: 'Ingegneria Gestionale e della Logistica' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Salva modifiche' }));
+
+    await waitFor(() => expect(updateSecretaryDegreeProgram).toHaveBeenCalledWith('ingGest', {
+      code: 'L-9',
+      name: 'Ingegneria Gestionale e della Logistica',
+      durationYears: 3,
+    }));
+    expect(createSecretaryDegreeProgram).not.toHaveBeenCalled();
+    expect(deleteSecretaryDegreeProgram).not.toHaveBeenCalled();
+    expect(await screen.findByText('Corso di laurea aggiornato')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Nuovo corso di laurea' })).toBeTruthy();
+  });
+
+  it('annulla la modifica e torna al modulo per un nuovo corso', async () => {
+    await renderPage();
+    fireEvent.click(within(rowOf(/Ingegneria Informatica/)).getByRole('button', { name: 'Modifica' }));
+
+    fireEvent.click(screen.getByRole('button', { name: 'Annulla' }));
+
+    expect(screen.getByRole('heading', { name: 'Nuovo corso di laurea' })).toBeTruthy();
+    expect((screen.getByRole('textbox', { name: 'Nome' }) as HTMLInputElement).value).toBe('');
   });
 });

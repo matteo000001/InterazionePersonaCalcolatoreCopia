@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   UseGuards,
   ValidationPipe,
@@ -19,6 +20,7 @@ import { UserRole } from '@exam-planner/shared-types';
 import { CatalogService } from './catalog.service';
 import { CreateCourseYearDto } from './dto/create-course-year.dto';
 import { CreateDegreeProgramDto } from './dto/create-degree-program.dto';
+import { UpdateDegreeProgramDto } from './dto/update-degree-program.dto';
 import { JwtAuthGuard, Roles, RolesGuard } from '@exam-planner/server-security';
 
 @ApiTags('catalog')
@@ -70,6 +72,30 @@ export class CatalogController {
   })
   createDegreeProgram(@Body(ValidationPipe) dto: CreateDegreeProgramDto) {
     return this.catalogService.createDegreeProgram(dto);
+  }
+
+  @ApiBearerAuth()
+  @Roles(UserRole.SECRETARY)
+  @UseGuards(JwtAuthGuard,RolesGuard)
+  @Patch('degree-programs/:id')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: {
+        code: { type: 'string', example: 'L-9' },
+        name: { type: 'string', example: 'Ingegneria Gestionale' },
+        durationYears: { type: 'number', enum: [2, 3], example: 3 },
+      },
+    },
+  })
+  @ApiOkResponse({
+    description: 'Updates code, name or duration of the selected degree program.',
+  })
+  updateDegreeProgram(
+    @Param('id') id: string,
+    @Body(ValidationPipe) dto: UpdateDegreeProgramDto
+  ) {
+    return this.catalogService.updateDegreeProgram(id, dto);
   }
 
   @ApiBearerAuth()

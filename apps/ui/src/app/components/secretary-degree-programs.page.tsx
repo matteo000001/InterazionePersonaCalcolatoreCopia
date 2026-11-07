@@ -4,6 +4,7 @@ import {
   createSecretaryDegreeProgram,
   deleteSecretaryDegreeProgram,
   fetchSecretaryDegreePrograms,
+  updateSecretaryDegreeProgram,
 } from './secretary.api';
 import {
   defaultDegreeProgramForm,
@@ -24,6 +25,9 @@ export function SecretaryDegreeProgramsPage({
   const [degreePrograms, setDegreePrograms] = useState<DegreeProgram[]>([]);
   const [degreeProgramForm, setDegreeProgramForm] =
     useState<DegreeProgramFormState>(defaultDegreeProgramForm);
+  const [savedDegreeProgramForm, setSavedDegreeProgramForm] =
+    useState<DegreeProgramFormState>(defaultDegreeProgramForm);
+  const [editingProgramId, setEditingProgramId] = useState<string | null>(null);
   const [programSearch, setProgramSearch] = useState('');
   const [programSort, setProgramSort] = useState('name');
   const [loading, setLoading] = useState(true);
@@ -50,7 +54,7 @@ export function SecretaryDegreeProgramsPage({
   }, []);
 
   const isFormDirty =
-    JSON.stringify(degreeProgramForm) !== JSON.stringify(defaultDegreeProgramForm);
+    JSON.stringify(degreeProgramForm) !== JSON.stringify(savedDegreeProgramForm);
 
   useEffect(() => {
     onDirtyChange?.(isFormDirty);
@@ -71,7 +75,26 @@ export function SecretaryDegreeProgramsPage({
     setDegreePrograms(loadedDegreePrograms);
   }
 
-  async function handleCreateDegreeProgram() {
+  function startEditDegreeProgram(program: DegreeProgram) {
+    const formFromProgram: DegreeProgramFormState = {
+      code: program.code,
+      name: program.name,
+      type: program.durationYears === 2 ? 'magistrale' : 'triennale',
+    };
+    setEditingProgramId(program.id);
+    setDegreeProgramForm(formFromProgram);
+    setSavedDegreeProgramForm(formFromProgram);
+    setError(null);
+    setSuccessMessage(null);
+  }
+
+  function resetDegreeProgramForm() {
+    setEditingProgramId(null);
+    setDegreeProgramForm(defaultDegreeProgramForm);
+    setSavedDegreeProgramForm(defaultDegreeProgramForm);
+  }
+
+  async function handleSaveDegreeProgram() {
     setIsSubmitting(true);
     setError(null);
     setSuccessMessage(null);
@@ -82,6 +105,7 @@ export function SecretaryDegreeProgramsPage({
 
       const alreadyExists = degreePrograms.some(
         (program) =>
+          program.id !== editingProgramId &&
           program.code.trim().toLowerCase() === degreeProgramCode.toLowerCase() &&
           program.name.trim().toLowerCase() === degreeProgramName.toLowerCase()
       );
@@ -90,14 +114,23 @@ export function SecretaryDegreeProgramsPage({
         throw new Error('Esiste già un corso di laurea con questo codice e questo nome');
       }
 
-      await createSecretaryDegreeProgram({
+      const payload = {
         code: degreeProgramCode,
         name: degreeProgramName,
         durationYears: getDegreeProgramDuration(degreeProgramForm.type),
-      });
+      };
+
+      if (editingProgramId) {
+        await updateSecretaryDegreeProgram(editingProgramId, payload);
+      } else {
+        await createSecretaryDegreeProgram(payload);
+      }
+
       await refreshDegreePrograms();
-      setDegreeProgramForm(defaultDegreeProgramForm);
-      setSuccessMessage('Corso di laurea creato');
+      resetDegreeProgramForm();
+      setSuccessMessage(
+        editingProgramId ? 'Corso di laurea aggiornato' : 'Corso di laurea creato'
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Operazione non riuscita');
     } finally {
@@ -126,6 +159,11 @@ export function SecretaryDegreeProgramsPage({
     try {
       await deleteSecretaryDegreeProgram(id);
       await refreshDegreePrograms();
+
+      if (editingProgramId === id) {
+        resetDegreeProgramForm();
+      }
+
       setSuccessMessage('Corso di laurea eliminato');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Operazione non riuscita');
@@ -164,13 +202,15 @@ export function SecretaryDegreeProgramsPage({
           className="panel"
           onSubmit={(event) => {
             event.preventDefault();
-            void handleCreateDegreeProgram();
+            void handleSaveDegreeProgram();
           }}
         >
           <div className="panel__header">
             <div>
               <p className="eyebrow">Corsi di laurea</p>
-              <h2>Nuovo corso di laurea</h2>
+              <h2>
+                {editingProgramId ? 'Modifica corso di laurea' : 'Nuovo corso di laurea'}
+              </h2>
             </div>
           </div>
 
@@ -234,13 +274,33 @@ export function SecretaryDegreeProgramsPage({
             </div>
           </div>
 
-          <button
-            type="submit"
-            className="primary"
-            disabled={isSubmitting}
-          >
-            Aggiungi corso di laurea
-          </button>
+          {editingProgramId &&
+          savedDegreeProgramForm.type !== degreeProgramForm.type ? (
+            <p className="field-hint" role="note">
+              Cambiando il tipo di corso cambiano gli anni disponibili: verifica
+              le materie e gli appelli già associati agli anni non più previsti.
+            </p>
+          ) : null}
+
+          <div className="inline-actions">
+            <button
+              type="submit"
+              className="primary"
+              disabled={isSubmitting}
+            >
+              {editingProgramId ? 'Salva modifiche' : 'Aggiungi corso di laurea'}
+            </button>
+            {editingProgramId ? (
+              <button
+                type="button"
+                className="secondary"
+                onClick={resetDegreeProgramForm}
+                disabled={isSubmitting}
+              >
+                Annulla
+              </button>
+            ) : null}
+          </div>
         </form>
 
         <div className="panel">
@@ -282,6 +342,14 @@ export function SecretaryDegreeProgramsPage({
                   {getDegreeProgramTypeLabel(program)}
                 </span>
                 <span className="inline-actions">
+                  <button
+                    type="button"
+                    className="secondary"
+                    onClick={() => startEditDegreeProgram(program)}
+                    disabled={isSubmitting}
+                  >
+                    Modifica
+                  </button>
                   <button
                     type="button"
                     className="danger"

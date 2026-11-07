@@ -2,6 +2,7 @@ import { ConflictException, Injectable, NotFoundException } from '@nestjs/common
 import { CatalogRepository } from './catalog.repository';
 import { CreateCourseYearDto } from './dto/create-course-year.dto';
 import { CreateDegreeProgramDto } from './dto/create-degree-program.dto';
+import { UpdateDegreeProgramDto } from './dto/update-degree-program.dto';
 
 // Ricava un identificativo leggibile dal nome: «Ingegneria Elettronica» →
 // «ingegneria-elettronica».
@@ -91,6 +92,16 @@ export class CatalogService {
     }
 
     return candidate;
+  }
+
+  async updateDegreeProgram(id: string, dto: UpdateDegreeProgramDto) {
+    const updated = await this.catalogRepository.updateDegreeProgram(id, dto);
+
+    if (!updated) {
+      throw new NotFoundException('Corso di laurea non trovato');
+    }
+
+    return updated;
   }
 
   async deleteDegreeProgram(id: string) {

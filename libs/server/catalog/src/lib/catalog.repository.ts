@@ -4,6 +4,7 @@ import { Repository } from 'typeorm';
 import { DegreeProgramEntity } from './degree-program.entity';
 import { CourseYearEntity } from './course-year.entity';
 import { CreateDegreeProgramDto } from './dto/create-degree-program.dto';
+import { UpdateDegreeProgramDto } from './dto/update-degree-program.dto';
 import { CreateCourseYearDto } from './dto/create-course-year.dto';
 @Injectable()
 export class CatalogRepository {
@@ -33,6 +34,31 @@ export class CatalogRepository {
       name: dto.name.trim(),
       durationYears: dto.durationYears,
     });
+
+    return this.repository.save(degreeProgram);
+  }
+
+  async updateDegreeProgram(
+    id: string,
+    dto: UpdateDegreeProgramDto
+  ): Promise<DegreeProgramEntity | null> {
+    const degreeProgram = await this.findDegreeProgramById(id);
+
+    if (!degreeProgram) {
+      return null;
+    }
+
+    if (dto.code !== undefined) {
+      degreeProgram.code = dto.code.trim();
+    }
+
+    if (dto.name !== undefined) {
+      degreeProgram.name = dto.name.trim();
+    }
+
+    if (dto.durationYears !== undefined) {
+      degreeProgram.durationYears = dto.durationYears;
+    }
 
     return this.repository.save(degreeProgram);
   }

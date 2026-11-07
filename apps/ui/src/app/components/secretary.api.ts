@@ -221,6 +221,26 @@ export async function createSecretaryDegreeProgram(
   return response.json();
 }
 
+export type UpdateSecretaryDegreeProgramPayload =
+  Partial<CreateSecretaryDegreeProgramPayload>;
+
+export async function updateSecretaryDegreeProgram(
+  id: string,
+  payload: UpdateSecretaryDegreeProgramPayload
+): Promise<DegreeProgram> {
+  const response = await fetch(`${API_URL}/degree-programs/${id}`, {
+    method: 'PATCH',
+    headers: getAuthHeaders(),
+    body: JSON.stringify(payload),
+  });
+
+  if (!response.ok) {
+    await handleApiError(response);
+  }
+
+  return response.json();
+}
+
 export async function deleteSecretaryDegreeProgram(id: string): Promise<void> {
   const response = await fetch(`${API_URL}/degree-programs/${id}`, {
     method: 'DELETE',
