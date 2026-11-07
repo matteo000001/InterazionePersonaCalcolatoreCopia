@@ -451,7 +451,7 @@ describe('Visibilità del dettaglio della giornata', () => {
       .toBe('In questa data sono presenti appelli tuoi e di altri docenti.');
     expectDisabledWithHelp(within(panel).getByRole('textbox', { name: 'Note appello' }));
     expectDisabledWithHelp(within(panel).getByRole('button', { name: 'Salva note' }));
-    expect(within(panel).getByRole('button', { name: 'Elimina' }).hasAttribute('disabled')).toBe(false);
+    expect(within(panel).getByRole('button', { name: 'Elimina appello' }).hasAttribute('disabled')).toBe(false);
   });
 
   it.each(constrainedOwnAppointmentCases)('mantiene visibili i vincoli $status anche con un proprio appello', async ({ status, date, planningOpen, message }) => {
@@ -474,7 +474,7 @@ describe('Visibilità del dettaglio della giornata', () => {
     expect(within(panel).getByRole('status').textContent).toBe(message);
     expect(within(panel).queryByText('Server reason in English')).toBeNull();
     expectDisabledWithHelp(within(panel).getByRole('textbox', { name: 'Note appello' }));
-    for (const name of ['Salva note', 'Elimina']) {
+    for (const name of ['Salva note', 'Elimina appello']) {
       const button = within(panel).getByRole('button', { name });
       expectDisabledWithHelp(button);
       fireEvent.click(button);
@@ -519,7 +519,7 @@ describe('Visibilità del dettaglio della giornata', () => {
     expect(within(panel).getAllByRole('button', { name: /Salva note|Aggiorna/ })).toHaveLength(1);
     expect(expectDisabledWithHelp(within(panel).getByRole('button', { name: 'Salva note' })).textContent)
       .toContain('Nessuna modifica da salvare.');
-    expect(within(panel).getByRole('button', { name: 'Elimina' }).hasAttribute('disabled')).toBe(false);
+    expect(within(panel).getByRole('button', { name: 'Elimina appello' }).hasAttribute('disabled')).toBe(false);
     expect(within(panel).getByRole('combobox', { name: 'Sposta a' }).hasAttribute('disabled')).toBe(false);
     const updatedAppointment = { ...appointment, notes: 'Nota aggiornata' };
     jest.mocked(updateTeacherAppointment).mockResolvedValue(updatedAppointment);
@@ -722,5 +722,24 @@ describe('Visibilità del dettaglio della giornata', () => {
       (within(panel).getByRole('textbox', { name: 'Note appello' }) as HTMLTextAreaElement).value
     ).toBe('Nota salvata'));
     expectDisabledWithHelp(within(panel).getByRole('button', { name: 'Salva note' }));
+  });
+  it('chiede conferma prima di eliminare un appello e non elimina se l’utente annulla', async () => {
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    const panel = await renderDashboard();
+    const deleteButton = within(panel).getByRole('button', { name: 'Elimina appello' });
+
+    fireEvent.click(deleteButton);
+
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(confirmSpy.mock.calls[0][0]).toContain('Materia Test di giovedì 14 gennaio 2027');
+    expect(confirmSpy.mock.calls[0][0]).toContain('non può essere annullata');
+    expect(deleteTeacherAppointment).not.toHaveBeenCalled();
+
+    confirmSpy.mockReturnValue(true);
+    jest.mocked(deleteTeacherAppointment).mockResolvedValue(undefined);
+    fireEvent.click(deleteButton);
+
+    await waitFor(() => expect(deleteTeacherAppointment).toHaveBeenCalledWith('appointment-1'));
+    expect(await within(panel).findByText('Appello eliminato')).toBeTruthy();
   });
 });

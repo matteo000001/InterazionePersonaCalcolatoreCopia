@@ -314,6 +314,23 @@ export function TeacherDashboard() {
     setSelectedCourseYearId((current) => current || courseYears[0]?.id || '');
   }
 
+  // L'eliminazione non è reversibile e libera la data per i colleghi:
+  // chiede conferma indicando esattamente quale appello verrà eliminato.
+  function confirmDeleteAppointment(appointment: ExamAppointment) {
+    const subjectName =
+      appointment.subject?.name ??
+      subjects.find((subject) => subject.id === appointment.subjectId)?.name;
+    const description = subjectName
+      ? `l'appello di ${subjectName} di ${formatCalendarDate(appointment.examDate)}`
+      : `il tuo appello di ${formatCalendarDate(appointment.examDate)}`;
+
+    return window.confirm(
+      `Vuoi eliminare ${description}?\n\n` +
+        'La data tornerà libera e potrà essere occupata da un collega. ' +
+        'L’operazione non può essere annullata.'
+    );
+  }
+
   async function handleMutation(action: () => Promise<void>, success: string) {
     setIsSubmitting(true);
     setError(null);
@@ -560,17 +577,21 @@ export function TeacherDashboard() {
                           <button
                             type="button"
                             className="danger"
-                            onClick={() =>
+                            onClick={() => {
+                              if (!confirmDeleteAppointment(appointment)) {
+                                return;
+                              }
+
                               void handleMutation(async () => {
                                 await deleteTeacherAppointment(appointment.id);
                                 await refreshTeacherData();
                                 setNotes('');
-                              }, 'Appello eliminato')
-                            }
+                              }, 'Appello eliminato');
+                            }}
                             disabled={isSubmitting || Boolean(dateBlockReason)}
                             aria-describedby={isSubmitting || dateBlockReason ? 'appointment-action-help' : undefined}
                           >
-                            Elimina
+                            Elimina appello
                           </button>
                         </div>
                       ) : null}
