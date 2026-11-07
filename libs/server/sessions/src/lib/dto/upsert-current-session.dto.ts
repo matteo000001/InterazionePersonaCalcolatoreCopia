@@ -50,22 +50,24 @@ class PlanningBeforeSessionValidator implements ValidatorConstraintInterface {
   }
 }
 
+// Messaggi in italiano, comprensibili dalla segreteria: non citano i nomi
+// interni dei campi né lo standard ISO 8601.
 export class UpsertCurrentSessionDto {
   @ApiProperty()
-  @IsDateString()
+  @IsDateString({}, { message: "Indica una data valida per l'inizio della sessione d'esami" })
   sessionStart!: string;
 
   @ApiProperty()
-  @IsDateString()
+  @IsDateString({}, { message: "Indica una data valida per la fine della sessione d'esami" })
   @Validate(SessionEndAfterStartValidator)
   sessionEnd!: string;
 
   @ApiProperty()
-  @IsDateString()
+  @IsDateString({}, { message: "Indica una data valida per l'inizio della finestra di pianificazione" })
   planningStart!: string;
 
   @ApiProperty()
-  @IsDateString()
+  @IsDateString({}, { message: 'Indica una data valida per la fine della finestra di pianificazione' })
   @Validate(PlanningEndAfterStartValidator)
   @Validate(PlanningBeforeSessionValidator)
   planningEnd!: string;
@@ -76,8 +78,14 @@ export class UpsertCurrentSessionDto {
     example: ['2026-04-25', '2026-05-01'],
   })
   @IsOptional()
-  @IsArray()
-  @ArrayUnique()
-  @IsDateString({}, { each: true })
+  @IsArray({ message: 'Le festività escluse devono essere un elenco di date' })
+  @ArrayUnique({ message: 'Ogni festività esclusa può comparire una sola volta' })
+  @IsDateString(
+    {},
+    {
+      each: true,
+      message: 'Ogni festività esclusa deve essere una data valida (ad esempio 25/12/2026)',
+    }
+  )
   excludedHolidayDates?: string[];
 }

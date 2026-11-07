@@ -36,6 +36,12 @@ function getSessionDateErrors(form: SessionFormState) {
   return errors;
 }
 
+// Gli errori sulle festività vengono mostrati accanto al relativo campo,
+// gli altri accanto al pulsante di salvataggio.
+function isHolidayError(message: string) {
+  return /festivit/i.test(message);
+}
+
 function isWeekendDate(date: string) {
   const day = new Date(`${date}T00:00:00.000Z`).getUTCDay();
   return day === 0 || day === 6;
@@ -141,6 +147,7 @@ export function SecretaryHomePage() {
       excludedHolidayDates: [...current.excludedHolidayDates, holidayDraft].sort(),
     }));
     setHolidayDraft('');
+    setError(null);
   }
 
   function removeHoliday(date: string) {
@@ -150,6 +157,7 @@ export function SecretaryHomePage() {
         (holiday) => holiday !== date
       ),
     }));
+    setError(null);
   }
 
   async function handleSaveSession() {
@@ -176,7 +184,11 @@ export function SecretaryHomePage() {
           : 'Sessione esami creata'
       );
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Operazione non riuscita');
+      setError(
+        err instanceof Error && err.message !== 'Failed to fetch'
+          ? err.message
+          : 'il server non risponde, riprova tra qualche istante.'
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -213,9 +225,11 @@ export function SecretaryHomePage() {
     );
   }
 
+  const holidayError = error && isHolidayError(error) ? error : null;
+  const saveError = error && !isHolidayError(error) ? error : null;
+
   return (
     <section className="session-home">
-      {error ? <div className="alert error" role="alert">{error}</div> : null}
       {successMessage ? <div className="alert success" role="status">{successMessage}</div> : null}
 
       <div className="panel session-panel">
@@ -389,6 +403,12 @@ export function SecretaryHomePage() {
             </p>
           ) : null}
 
+          {holidayError ? (
+            <p className="alert error field-alert" role="alert">
+              {holidayError}
+            </p>
+          ) : null}
+
           {sessionForm.excludedHolidayDates.length > 0 ? (
             <ul className="holiday-list" aria-label="Festività escluse">
               {sessionForm.excludedHolidayDates.map((holiday) => (
@@ -412,6 +432,12 @@ export function SecretaryHomePage() {
             <p className="field-hint">Nessuna festività esclusa.</p>
           )}
         </fieldset>
+
+        {saveError ? (
+          <div className="alert error field-alert" role="alert">
+            Configurazione non salvata: {saveError}
+          </div>
+        ) : null}
 
         <button
           type="button"

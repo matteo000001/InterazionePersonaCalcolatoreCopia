@@ -1033,3 +1033,8 @@ select[aria-invalid='true'],
 textarea[aria-invalid='true'] {
   border-color: var(--danger);
 }
+
+/* Errore mostrato vicino al campo o al pulsante a cui si riferisce. */
+.alert.field-alert {
+  margin: 0;
+}

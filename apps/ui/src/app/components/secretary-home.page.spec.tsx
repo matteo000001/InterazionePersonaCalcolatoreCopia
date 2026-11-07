@@ -87,4 +87,29 @@ describe('Configurazione sessione', () => {
       .toContain(message);
     expect(screen.getByRole('button', { name: 'Aggiungi festività' }).hasAttribute('disabled')).toBe(true);
   });
+  it('mostra gli errori sulle festività accanto al relativo campo e in italiano', async () => {
+    jest.mocked(saveCurrentSession).mockRejectedValue(
+      new Error('Ogni festività esclusa deve essere una data valida (ad esempio 25/12/2026)')
+    );
+    await renderPage();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salva configurazione sessione' }));
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toContain('Ogni festività esclusa deve essere una data valida');
+    expect(alert.textContent).not.toMatch(/excludedHolidayDates|ISO 8601/);
+    expect(alert.closest('fieldset')?.querySelector('legend')?.textContent).toBe('Festività escluse (opzionali)');
+  });
+
+  it('mostra gli altri errori di salvataggio vicino al pulsante', async () => {
+    jest.mocked(saveCurrentSession).mockRejectedValue(new Error('Failed to fetch'));
+    await renderPage();
+    const saveButton = screen.getByRole('button', { name: 'Salva configurazione sessione' });
+
+    fireEvent.click(saveButton);
+
+    const alert = await screen.findByRole('alert');
+    expect(alert.textContent).toBe('Configurazione non salvata: il server non risponde, riprova tra qualche istante.');
+    expect(alert.nextElementSibling).toBe(saveButton);
+  });
 });
