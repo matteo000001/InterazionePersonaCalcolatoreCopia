@@ -93,4 +93,18 @@ describe('Materie', () => {
     expect(within(row).getByText(/2° anno/)).toBeTruthy();
     expect(within(row).queryByText(/ingInf|ingGest|year-2/)).toBeNull();
   });
+  it('chiede conferma prima di eliminare una materia e non elimina se si annulla', async () => {
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    await renderPage();
+    const row = screen.getByText(/Analisi 2/).closest('.summary-row') as HTMLElement;
+
+    fireEvent.click(within(row).getByRole('button', { name: 'Elimina' }));
+
+    expect(confirmSpy.mock.calls[0][0]).toContain('«Analisi 2» di Mario Bianchi');
+    expect(deleteSecretarySubject).not.toHaveBeenCalled();
+
+    confirmSpy.mockReturnValue(true);
+    fireEvent.click(within(row).getByRole('button', { name: 'Elimina' }));
+    await waitFor(() => expect(deleteSecretarySubject).toHaveBeenCalledWith(10));
+  });
 });

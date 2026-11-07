@@ -176,6 +176,22 @@ export function SecretarySubjectsPage({
   }
 
   async function handleDeleteSubject(id: number) {
+    const subjectToDelete = subjects.find((subject) => subject.id === id);
+    const teacherName = subjectToDelete
+      ? users.find((currentUser) => currentUser.id === subjectToDelete.teacherId)?.name
+      : undefined;
+
+    if (
+      !window.confirm(
+        `Vuoi eliminare la materia «${subjectToDelete?.name ?? ''}»` +
+          `${teacherName ? ` di ${teacherName}` : ''}?\n\n` +
+          'Gli appelli già fissati per questa materia potrebbero non essere più consultabili. ' +
+          'L’operazione non può essere annullata.'
+      )
+    ) {
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
     setSuccessMessage(null);

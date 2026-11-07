@@ -143,4 +143,20 @@ describe('Utenti', () => {
       expect(screen.queryByText(new RegExp(`\\b${code}\\b`))).toBeNull();
     }
   });
+  it('chiede conferma prima di eliminare un utente e non elimina se si annulla', async () => {
+    const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(false);
+    await renderPage();
+    const teacherRow = screen.getByText(/mario\.bianchi@example\.com/).closest('.summary-row') as HTMLElement;
+    const deleteButton = within(teacherRow).getByRole('button', { name: 'Elimina' });
+
+    fireEvent.click(deleteButton);
+
+    expect(confirmSpy.mock.calls[0][0]).toContain('«Mario Bianchi» (mario.bianchi@example.com)');
+    expect(confirmSpy.mock.calls[0][0]).toContain('non può essere annullata');
+    expect(deleteSecretaryUser).not.toHaveBeenCalled();
+
+    confirmSpy.mockReturnValue(true);
+    fireEvent.click(deleteButton);
+    await waitFor(() => expect(deleteSecretaryUser).toHaveBeenCalledWith(1));
+  });
 });

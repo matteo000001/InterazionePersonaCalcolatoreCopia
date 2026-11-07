@@ -247,6 +247,21 @@ export function SecretaryUsersPage({
   }
 
   async function handleDeleteUser(id: number) {
+    const userToDelete = users.find((currentUser) => currentUser.id === id);
+    const consequences =
+      userToDelete?.role === UserRole.TEACHER
+        ? 'Il docente non potrà più accedere e le materie e gli appelli a lui collegati potrebbero non essere più gestibili.'
+        : 'L’utente non potrà più accedere al sistema.';
+
+    if (
+      !window.confirm(
+        `Vuoi eliminare l’utente «${userToDelete?.name ?? ''}» (${userToDelete?.email ?? ''})?\n\n` +
+          `${consequences} L’operazione non può essere annullata.`
+      )
+    ) {
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
     setSuccessMessage(null);

@@ -111,6 +111,19 @@ export function SecretaryDegreeProgramsPage({
   }
 
   async function handleDeleteDegreeProgram(id: string) {
+    const programToDelete = degreePrograms.find((program) => program.id === id);
+
+    if (
+      !window.confirm(
+        `Vuoi eliminare il corso di laurea «${programToDelete?.name ?? ''}` +
+          `${programToDelete ? ` (${programToDelete.code})` : ''}»?\n\n` +
+          'Docenti, materie e appelli collegati a questo corso non potranno più usarlo. ' +
+          'L’operazione non può essere annullata.'
+      )
+    ) {
+      return;
+    }
+
     setIsSubmitting(true);
     setError(null);
     setSuccessMessage(null);
