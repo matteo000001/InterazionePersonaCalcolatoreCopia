@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Navigate, useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Navigate, useNavigate, useParams } from 'react-router-dom';
 import { User, UserRole } from '@exam-planner/shared-types';
 import { api } from '../api';
 import { getAccessToken } from '../auth/auth.api';
@@ -19,15 +19,43 @@ const secretaryPageTitles: Record<SecretaryMenuItem, string> = {
   appointments: 'Visualizza appelli – Segreteria',
 };
 
+// Ogni sezione ha il proprio indirizzo: il tasto «Indietro» del browser torna
+// alla sezione precedente e ricaricando la pagina si resta nella stessa sezione.
+const secretarySectionPaths: Record<SecretaryMenuItem, string> = {
+  home: '',
+  users: 'utenti',
+  subjects: 'materie',
+  'degree-programs': 'corsi-di-laurea',
+  appointments: 'appelli',
+};
+
+function getSecretarySectionUrl(menuItem: SecretaryMenuItem) {
+  const path = secretarySectionPaths[menuItem];
+  return path ? `/secretary/${path}` : '/secretary';
+}
+
+function getMenuItemFromPath(path: string): SecretaryMenuItem | undefined {
+  const normalizedPath = path.replace(/\/+$/, '');
+
+  return (Object.keys(secretarySectionPaths) as SecretaryMenuItem[]).find(
+    (menuItem) => secretarySectionPaths[menuItem] === normalizedPath
+  );
+}
+
 export function SecretaryDashboard() {
   const navigate = useNavigate();
   const token = getAccessToken();
+  const sectionPath = useParams()['*'] ?? '';
+  const requestedMenuItem = getMenuItemFromPath(sectionPath);
   const [user, setUser] = useState<User | null>(null);
-  const [selectedMenuItem, setSelectedMenuItem] =
-    useState<SecretaryMenuItem>('home');
+  const [selectedMenuItem, setSelectedMenuItem] = useState<SecretaryMenuItem>(
+    requestedMenuItem ?? 'home'
+  );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  // Vero quando l'uscita dal modulo è già stata confermata dal clic sul menu.
+  const leaveConfirmedRef = useRef(false);
 
   usePageTitle(secretaryPageTitles[selectedMenuItem]);
 
@@ -50,22 +78,46 @@ export function SecretaryDashboard() {
   }, [token]);
 
   // Chiede conferma prima di abbandonare un modulo compilato e non salvato.
-  function confirmLeaveForm() {
-    return (
+  const confirmLeaveForm = useCallback(
+    () =>
       !hasUnsavedChanges ||
       window.confirm(
         'Ci sono dati inseriti nel modulo e non ancora salvati. Se esci da questa sezione andranno persi. Vuoi continuare?'
-      )
-    );
-  }
+      ),
+    [hasUnsavedChanges]
+  );
+
+  // Sincronizza la sezione mostrata con l'indirizzo, anche quando cambia con
+  // i tasti «Indietro»/«Avanti» del browser.
+  useEffect(() => {
+    if (!requestedMenuItem) {
+      navigate(getSecretarySectionUrl('home'), { replace: true });
+      return;
+    }
+
+    if (requestedMenuItem === selectedMenuItem) {
+      return;
+    }
+
+    const canLeave = leaveConfirmedRef.current || confirmLeaveForm();
+    leaveConfirmedRef.current = false;
+
+    if (canLeave) {
+      setHasUnsavedChanges(false);
+      setSelectedMenuItem(requestedMenuItem);
+    } else {
+      // L'utente resta nel modulo: l'indirizzo torna quello della sezione mostrata.
+      navigate(getSecretarySectionUrl(selectedMenuItem), { replace: true });
+    }
+  }, [confirmLeaveForm, navigate, requestedMenuItem, selectedMenuItem]);
 
   function selectMenuItem(menuItem: SecretaryMenuItem) {
     if (menuItem === selectedMenuItem || !confirmLeaveForm()) {
       return;
     }
 
-    setHasUnsavedChanges(false);
-    setSelectedMenuItem(menuItem);
+    leaveConfirmedRef.current = true;
+    navigate(getSecretarySectionUrl(menuItem));
   }
 
   function renderSelectedPage() {

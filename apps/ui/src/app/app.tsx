@@ -17,7 +17,7 @@ export function App() {
         }
       />
       <Route
-        path="/secretary"
+        path="/secretary/*"
         element={
           <ProtectedRoute>
             <SecretaryDashboard />
