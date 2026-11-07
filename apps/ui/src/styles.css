@@ -960,3 +960,76 @@ button.compact-appointment.is-current {
   color: var(--muted);
   font-size: 0.875rem;
 }
+
+/* Festività escluse: selettore di data ed elenco delle date scelte. */
+fieldset.holiday-field {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+fieldset.holiday-field legend {
+  padding: 0 6px;
+  font-weight: 700;
+}
+
+.holiday-picker {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.holiday-picker label {
+  flex: 0 1 240px;
+}
+
+.holiday-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.holiday-list li {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 6px 6px 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.holiday-list time {
+  flex: 1 1 auto;
+}
+
+.holiday-list button {
+  padding: 6px 12px;
+  border-radius: 8px;
+}
+
+.holiday-warning {
+  color: var(--danger);
+  font-size: 0.85rem;
+}
+
+.field-error {
+  margin: 0;
+  color: var(--danger);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+input[aria-invalid='true'],
+select[aria-invalid='true'],
+textarea[aria-invalid='true'] {
+  border-color: var(--danger);
+}

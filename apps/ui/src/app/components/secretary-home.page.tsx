@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import {createCurrentSession,fetchCurrentSessionIfExists,saveCurrentSession,} from './secretary.api';
 import {defaultSessionForm,SessionFormState,} from './secretary-dashboard.types';
+import { formatCalendarDate } from '../shared/format-calendar-date';
 
 // Sposta una data AAAA-MM-GG di `amount` giorni (stringa vuota se la data manca).
 function shiftDate(date: string, amount: number) {
@@ -35,10 +36,45 @@ function getSessionDateErrors(form: SessionFormState) {
   return errors;
 }
 
+function isWeekendDate(date: string) {
+  const day = new Date(`${date}T00:00:00.000Z`).getUTCDay();
+  return day === 0 || day === 6;
+}
+
+function isOutsideSession(date: string, form: SessionFormState) {
+  return (
+    Boolean(form.sessionStart && form.sessionEnd) &&
+    (date < form.sessionStart || date > form.sessionEnd)
+  );
+}
+
+// Motivo per cui la data scelta non può essere aggiunta alle festività.
+function getHolidayDraftError(date: string, form: SessionFormState) {
+  if (!date) {
+    return undefined;
+  }
+
+  if (form.excludedHolidayDates.includes(date)) {
+    return 'Questa data è già tra le festività escluse.';
+  }
+
+  if (isOutsideSession(date, form)) {
+    return `La data è fuori dalla sessione esami (dal ${formatCalendarDate(
+      form.sessionStart
+    )} al ${formatCalendarDate(form.sessionEnd)}).`;
+  }
+
+  if (isWeekendDate(date)) {
+    return 'La data cade di sabato o domenica: questi giorni sono già esclusi.';
+  }
+
+  return undefined;
+}
+
 export function SecretaryHomePage() {
   const [sessionForm, setSessionForm] =
     useState<SessionFormState>(defaultSessionForm);
-  const [holidayInput, setHolidayInput] = useState('');
+  const [holidayDraft, setHolidayDraft] = useState('');
   const [hasCurrentSession, setHasCurrentSession] = useState(false);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -62,11 +98,9 @@ export function SecretaryHomePage() {
           planningEnd: currentSession.planningEnd,
           excludedHolidayDates: currentSession.excludedHolidayDates,
         });
-        setHolidayInput(currentSession.excludedHolidayDates.join(', '));
         setHasCurrentSession(true);
       } else {
         setSessionForm(defaultSessionForm);
-        setHolidayInput('');
         setHasCurrentSession(false);
       }
     } catch (err) {
@@ -84,20 +118,39 @@ export function SecretaryHomePage() {
     void loadCurrentSession();
   }, []);
 
-  function updateSessionField(field: keyof SessionFormState, value: string) {
+  function updateSessionField(
+    field: Exclude<keyof SessionFormState, 'excludedHolidayDates'>,
+    value: string
+  ) {
     setSessionForm((current) => ({
       ...current,
-      [field]:
-        field === 'excludedHolidayDates'
-          ? value
-              .split(',')
-              .map((item) => item.trim())
-              .filter(Boolean)
-          : value,
+      [field]: value,
     }));
   }
 
   const dateErrors = getSessionDateErrors(sessionForm);
+  const holidayDraftError = getHolidayDraftError(holidayDraft, sessionForm);
+
+  function addHoliday() {
+    if (!holidayDraft || holidayDraftError) {
+      return;
+    }
+
+    setSessionForm((current) => ({
+      ...current,
+      excludedHolidayDates: [...current.excludedHolidayDates, holidayDraft].sort(),
+    }));
+    setHolidayDraft('');
+  }
+
+  function removeHoliday(date: string) {
+    setSessionForm((current) => ({
+      ...current,
+      excludedHolidayDates: current.excludedHolidayDates.filter(
+        (holiday) => holiday !== date
+      ),
+    }));
+  }
 
   async function handleSaveSession() {
     setIsSubmitting(true);
@@ -116,7 +169,6 @@ export function SecretaryHomePage() {
         planningEnd: updatedSession.planningEnd,
         excludedHolidayDates: updatedSession.excludedHolidayDates,
       });
-      setHolidayInput(updatedSession.excludedHolidayDates.join(', '));
       setHasCurrentSession(true);
       setSuccessMessage(
         hasCurrentSession
@@ -294,23 +346,72 @@ export function SecretaryHomePage() {
           </ul>
         ) : null}
 
-        <label className="holiday-field">
-          Festività escluse (opzionali)
-          <span className="field-hint" id="session-holidays-hint">
+        <fieldset className="holiday-field" aria-describedby="session-holidays-hint">
+          <legend>Festività escluse (opzionali)</legend>
+          <p className="field-hint" id="session-holidays-hint">
             Giorni della sessione in cui non si possono fissare appelli, oltre a
-            sabati e domeniche (ad esempio le festività nazionali).
-          </span>
-          <input
-            type="text"
-            aria-describedby="session-holidays-hint"
-            value={holidayInput}
-            onChange={(event) => {
-              setHolidayInput(event.target.value);
-              updateSessionField('excludedHolidayDates', event.target.value);
-            }}
-            placeholder="2026-04-25, 2026-05-01"
-          />
-        </label>
+            sabati e domeniche (ad esempio le festività nazionali). Scegli una
+            data dal calendario e premi «Aggiungi festività».
+          </p>
+
+          <div className="holiday-picker">
+            <label>
+              Data da escludere
+              <input
+                type="date"
+                value={holidayDraft}
+                min={sessionForm.sessionStart || undefined}
+                max={sessionForm.sessionEnd || undefined}
+                aria-invalid={holidayDraftError ? true : undefined}
+                aria-describedby={holidayDraftError ? 'holiday-draft-error' : undefined}
+                onChange={(event) => setHolidayDraft(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter') {
+                    event.preventDefault();
+                    addHoliday();
+                  }
+                }}
+              />
+            </label>
+            <button
+              type="button"
+              className="secondary"
+              onClick={addHoliday}
+              disabled={!holidayDraft || Boolean(holidayDraftError)}
+            >
+              Aggiungi festività
+            </button>
+          </div>
+
+          {holidayDraftError ? (
+            <p className="field-error" id="holiday-draft-error">
+              {holidayDraftError}
+            </p>
+          ) : null}
+
+          {sessionForm.excludedHolidayDates.length > 0 ? (
+            <ul className="holiday-list" aria-label="Festività escluse">
+              {sessionForm.excludedHolidayDates.map((holiday) => (
+                <li key={holiday}>
+                  <time dateTime={holiday}>{formatCalendarDate(holiday)}</time>
+                  {isOutsideSession(holiday, sessionForm) ? (
+                    <span className="holiday-warning">fuori dalla sessione</span>
+                  ) : null}
+                  <button
+                    type="button"
+                    className="secondary"
+                    aria-label={`Rimuovi ${formatCalendarDate(holiday)}`}
+                    onClick={() => removeHoliday(holiday)}
+                  >
+                    Rimuovi
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="field-hint">Nessuna festività esclusa.</p>
+          )}
+        </fieldset>
 
         <button
           type="button"

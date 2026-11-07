@@ -1,5 +1,5 @@
 /** @jest-environment jsdom */
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { ExamSession } from '@exam-planner/shared-types';
 import {
   createCurrentSession,
@@ -47,5 +47,44 @@ describe('Configurazione sessione', () => {
     expect(document.getElementById(planningHint ?? '')?.textContent).toContain('inseriscono, modificano ed eliminano');
     const sessionHint = screen.getByLabelText('Inizio sessione').getAttribute('aria-describedby');
     expect(document.getElementById(sessionHint ?? '')?.textContent).toContain('si svolgono gli esami');
+  });
+  it('fa scegliere le festività da un selettore di data e le mostra in formato leggibile', async () => {
+    await renderPage();
+    const list = screen.getByRole('list', { name: 'Festività escluse' });
+    expect(within(list).getByText('mercoledì 6 gennaio 2027')).toBeTruthy();
+    expect(screen.queryByPlaceholderText('2026-04-25, 2026-05-01')).toBeNull();
+
+    const picker = screen.getByLabelText('Data da escludere');
+    expect(picker.getAttribute('type')).toBe('date');
+    expect(picker.getAttribute('min')).toBe('2027-01-11');
+    expect(picker.getAttribute('max')).toBe('2027-02-26');
+
+    fireEvent.change(picker, { target: { value: '2027-02-02' } });
+    fireEvent.click(screen.getByRole('button', { name: 'Aggiungi festività' }));
+    expect(within(list).getByText('martedì 2 febbraio 2027')).toBeTruthy();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Rimuovi mercoledì 6 gennaio 2027' }));
+    expect(within(list).queryByText('mercoledì 6 gennaio 2027')).toBeNull();
+
+    fireEvent.click(screen.getByRole('button', { name: 'Salva configurazione sessione' }));
+    await waitFor(() => expect(saveCurrentSession).toHaveBeenCalledWith(
+      expect.objectContaining({ excludedHolidayDates: ['2027-02-02'] })
+    ));
+  });
+
+  it.each([
+    ['2027-01-06', 'Questa data è già tra le festività escluse.'],
+    ['2027-03-10', 'La data è fuori dalla sessione esami'],
+    ['2027-01-16', 'La data cade di sabato o domenica'],
+  ])('spiega accanto al campo perché la data %s non si può aggiungere', async (date, message) => {
+    await renderPage();
+    const picker = screen.getByLabelText('Data da escludere');
+
+    fireEvent.change(picker, { target: { value: date } });
+
+    expect(picker.getAttribute('aria-invalid')).toBe('true');
+    expect(document.getElementById(picker.getAttribute('aria-describedby') ?? '')?.textContent)
+      .toContain(message);
+    expect(screen.getByRole('button', { name: 'Aggiungi festività' }).hasAttribute('disabled')).toBe(true);
   });
 });
