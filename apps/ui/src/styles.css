@@ -884,3 +884,15 @@ button.compact-appointment.is-current {
   color: var(--muted);
   font-size: 0.85rem;
 }
+
+/* Conferma mostrata accanto ai pulsanti del dettaglio giornata. */
+.action-feedback-slot:empty {
+  /* Resta nel DOM (regione live) ma non aggiunge spazio alla colonna. */
+  margin-top: -12px;
+}
+
+.alert.action-feedback {
+  margin: 0;
+  padding: 10px 14px;
+  font-weight: 600;
+}

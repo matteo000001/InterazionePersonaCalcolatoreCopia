@@ -36,6 +36,8 @@ import {
   fetchSecretaryDegreePrograms,
 } from './secretary.api';
 
+const SUCCESS_MESSAGE_DURATION_MS = 6000;
+
 export function TeacherDashboard() {
   usePageTitle('Pannello docente');
   const navigate = useNavigate();
@@ -80,6 +82,20 @@ export function TeacherDashboard() {
     : [];
   const moveTargetDays = availability.filter(isCalendarDayAvailable);
   const selectedMoveTarget = moveTargetDays.find((day) => day.date === moveTargetDate);
+
+  // Il messaggio di conferma si riferisce all'ultima azione: scompare da solo dopo
+  // qualche secondo e viene rimosso appena l'utente cambia giorno, corso o materia.
+  useEffect(() => {
+    if (!successMessage) {
+      return undefined;
+    }
+
+    const timeout = window.setTimeout(
+      () => setSuccessMessage(null),
+      SUCCESS_MESSAGE_DURATION_MS
+    );
+    return () => window.clearTimeout(timeout);
+  }, [successMessage]);
 
   useEffect(() => {
     if (detailRequest === 0) {
@@ -223,6 +239,7 @@ export function TeacherDashboard() {
 
   function selectSubject(subjectId: number | '') {
     setSelectedSubjectId(subjectId);
+    setSuccessMessage(null);
 
     if (subjectId === '') {
       return;
@@ -243,6 +260,7 @@ export function TeacherDashboard() {
 
   function selectDay(date: string) {
     setSelectedDate(date);
+    setSuccessMessage(null);
     setMoveTargetDate('');
     const ownAppointment =
       availability
@@ -256,6 +274,7 @@ export function TeacherDashboard() {
     setSelectedDegreeProgramId(degreeProgramId);
     setSelectedSubjectId('');
     setNotes('');
+    setSuccessMessage(null);
   }
 
   async function handleMutation(action: () => Promise<void>, success: string) {
@@ -358,7 +377,6 @@ export function TeacherDashboard() {
       </section>
 
       {error ? <div className="alert error" role="alert">{error}</div> : null}
-      {successMessage ? <div className="alert success" role="status">{successMessage}</div> : null}
 
       <section className="dashboard-grid">
         <div className="panel">
@@ -652,6 +670,12 @@ export function TeacherDashboard() {
                   Inserisci appello in questa data
                 </button>
               )}
+
+              <div className="action-feedback-slot" aria-live="polite" aria-atomic="true">
+                {successMessage ? (
+                  <p className="alert success action-feedback">{successMessage}</p>
+                ) : null}
+              </div>
 
               <div className="own-appointments">
                 <h4>I tuoi appelli</h4>

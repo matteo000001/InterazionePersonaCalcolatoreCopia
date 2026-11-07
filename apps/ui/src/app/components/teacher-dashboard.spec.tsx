@@ -637,4 +637,42 @@ describe('Visibilità del dettaglio della giornata', () => {
     await waitFor(() => expect(primary.hasAttribute('disabled')).toBe(false));
     expect(notes.hasAttribute('disabled')).toBe(false);
   });
+  it('mostra la conferma accanto ai pulsanti e la rimuove quando si cambia giorno', async () => {
+    const panel = await renderDashboard();
+    fireEvent.click(screen.getByRole('button', { name: /venerdì 15 gennaio 2027/ }));
+    jest.mocked(createTeacherAppointment).mockResolvedValue({
+      ...appointment, id: 'appointment-2', examDate: '2027-01-15',
+    });
+
+    fireEvent.click(within(panel).getByRole('button', { name: 'Inserisci appello in questa data' }));
+
+    const confirmation = await within(panel).findByText('Appello inserito correttamente');
+    expect(confirmation.closest('[aria-live="polite"]')).not.toBeNull();
+    expect(screen.getAllByText('Appello inserito correttamente')).toHaveLength(1);
+
+    const table = screen.getByRole('table', { name: 'gennaio 2027' });
+    fireEvent.click(within(table).getByRole('button', { name: /giovedì 14 gennaio 2027/ }));
+
+    expect(within(panel).queryByText('Appello inserito correttamente')).toBeNull();
+  });
+
+  it('nasconde automaticamente la conferma dopo qualche secondo', async () => {
+    jest.useFakeTimers();
+    try {
+      const panel = await renderDashboard();
+      fireEvent.click(screen.getByRole('button', { name: /venerdì 15 gennaio 2027/ }));
+      jest.mocked(createTeacherAppointment).mockResolvedValue({
+        ...appointment, id: 'appointment-2', examDate: '2027-01-15',
+      });
+      fireEvent.click(within(panel).getByRole('button', { name: 'Inserisci appello in questa data' }));
+      await within(panel).findByText('Appello inserito correttamente');
+
+      act(() => {
+        jest.advanceTimersByTime(6000);
+      });
+      expect(within(panel).queryByText('Appello inserito correttamente')).toBeNull();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
 });
