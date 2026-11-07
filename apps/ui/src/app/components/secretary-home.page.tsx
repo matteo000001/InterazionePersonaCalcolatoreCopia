@@ -175,19 +175,57 @@ export function SecretaryHomePage() {
         </div>
 
         <p className="hero-copy">
-          La finestra di pianificazione, in cui i docenti inseriscono gli appelli,
-          deve terminare prima dell'inizio della sessione esami.
+          Qui si definiscono le date della sessione d'esami. I docenti vedono un
+          calendario condiviso e, durante la finestra di pianificazione, fissano
+          i propri appelli nei giorni ancora liberi.
         </p>
+
+        <details className="help-box">
+          <summary>Come funziona la pianificazione degli appelli</summary>
+          <ol className="help-timeline" aria-label="Ordine delle date">
+            <li>
+              <strong>Finestra di pianificazione</strong>
+              <span>i docenti inseriscono, modificano ed eliminano i propri appelli</span>
+            </li>
+            <li>
+              <strong>Sessione esami</strong>
+              <span>si svolgono gli esami nelle date fissate</span>
+            </li>
+          </ol>
+          <ul>
+            <li>
+              La finestra di pianificazione deve <strong>terminare prima
+              dell'inizio della sessione</strong>: fuori da questo periodo i
+              docenti possono solo consultare il calendario.
+            </li>
+            <li>
+              Per ogni <strong>corso di laurea e anno di frequenza</strong> si può
+              fissare <strong>un solo appello al giorno</strong>: quando un docente
+              fissa un appello, quel giorno risulta occupato anche per i colleghi
+              dello stesso corso e anno, così gli studenti non hanno due esami
+              nella stessa giornata.
+            </li>
+            <li>
+              Sabati, domeniche e festività escluse non sono mai disponibili per
+              gli appelli.
+            </li>
+          </ul>
+        </details>
 
         <div className="session-config-grid">
           <div className="session-config-group">
             <h3>Sessione esami</h3>
+            <p className="field-hint" id="session-exams-hint">
+              Periodo in cui si svolgono gli esami: i docenti possono fissare
+              appelli solo in queste date.
+            </p>
             <div className="session-date-row">
               <label>
                 Inizio sessione
                 <input
                   type="date"
                   value={sessionForm.sessionStart}
+                  aria-describedby="session-exams-hint"
                   min={shiftDate(sessionForm.planningEnd, 1) || undefined}
                   max={sessionForm.sessionEnd || undefined}
                   onChange={(event) =>
@@ -201,6 +239,7 @@ export function SecretaryHomePage() {
                 <input
                   type="date"
                   value={sessionForm.sessionEnd}
+                  aria-describedby="session-exams-hint"
                   min={sessionForm.sessionStart || undefined}
                   onChange={(event) =>
                     updateSessionField('sessionEnd', event.target.value)
@@ -212,12 +251,17 @@ export function SecretaryHomePage() {
 
           <div className="session-config-group">
             <h3>Finestra pianificazione</h3>
+            <p className="field-hint" id="session-planning-hint">
+              Periodo in cui i docenti inseriscono, modificano ed eliminano i
+              propri appelli. Deve terminare prima dell'inizio della sessione.
+            </p>
             <div className="session-date-row">
               <label>
                 Inizio pianificazione
                 <input
                   type="date"
                   value={sessionForm.planningStart}
+                  aria-describedby="session-planning-hint"
                   max={sessionForm.planningEnd || undefined}
                   onChange={(event) =>
                     updateSessionField('planningStart', event.target.value)
@@ -230,6 +274,7 @@ export function SecretaryHomePage() {
                 <input
                   type="date"
                   value={sessionForm.planningEnd}
+                  aria-describedby="session-planning-hint"
                   min={sessionForm.planningStart || undefined}
                   max={shiftDate(sessionForm.sessionStart, -1) || undefined}
                   onChange={(event) =>
@@ -251,8 +296,13 @@ export function SecretaryHomePage() {
 
         <label className="holiday-field">
           Festività escluse (opzionali)
+          <span className="field-hint" id="session-holidays-hint">
+            Giorni della sessione in cui non si possono fissare appelli, oltre a
+            sabati e domeniche (ad esempio le festività nazionali).
+          </span>
           <input
             type="text"
+            aria-describedby="session-holidays-hint"
             value={holidayInput}
             onChange={(event) => {
               setHolidayInput(event.target.value);
