@@ -45,7 +45,7 @@ export class UsersService {
     if (updateUser.email) {
       const existing = await this.usersRepository.findByEmail(updateUser.email);
       if (existing && existing.id !== id) {
-        throw new ConflictException('email already in use');
+        throw new ConflictException('Esiste già un utente con questa e-mail.');
       }
     }
 
@@ -68,7 +68,7 @@ export class UsersService {
       : null;
 
     if (existing) {
-      throw new ConflictException('email already in use');
+      throw new ConflictException('Esiste già un utente con questa e-mail.');
     }
 
     if (user.role === UserRole.TEACHER) {

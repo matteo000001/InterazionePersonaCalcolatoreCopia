@@ -10,6 +10,77 @@ import {
 import { defaultUserForm, UserFormState } from './secretary-dashboard.types';
 import { compareText, ListToolbar, matchesSearch } from './list-toolbar';
 
+type UserFormField = 'name' | 'email' | 'password';
+type UserFormErrors = Partial<Record<UserFormField, string>>;
+
+const passwordRequirements = [
+  {
+    description: 'almeno 8 caratteri',
+    isSatisfied: (value: string) => Array.from(value).length >= 8,
+  },
+  {
+    description: 'una lettera maiuscola da A a Z',
+    isSatisfied: (value: string) => /[A-Z]/.test(value),
+  },
+  {
+    description: 'un carattere speciale tra ?^!@#',
+    isSatisfied: (value: string) => /[?^!@#]/.test(value),
+  },
+];
+
+// Controlla il modulo prima dell'invio, così ogni errore è mostrato in
+// italiano sotto il campo a cui si riferisce.
+function getUserFormErrors(form: UserFormState, isEditing: boolean): UserFormErrors {
+  const errors: UserFormErrors = {};
+  const name = form.name.trim();
+  const email = form.email.trim();
+
+  if (!name) {
+    errors.name = 'Inserisci il nome e il cognome.';
+  } else if (name.length < 3) {
+    errors.name = 'Il nome deve contenere almeno 3 caratteri.';
+  }
+
+  if (!email) {
+    errors.email = "Inserisci l'e-mail.";
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    errors.email = "Inserisci un'e-mail valida, ad esempio nome.cognome@ateneo.it.";
+  }
+
+  if (!isEditing) {
+    const missingRequirements = passwordRequirements.filter(
+      (requirement) => !requirement.isSatisfied(form.password)
+    );
+
+    if (!form.password) {
+      errors.password = 'Inserisci una password.';
+    } else if (missingRequirements.length > 0) {
+      errors.password = `La password deve contenere ${missingRequirements
+        .map((requirement) => requirement.description)
+        .join(', ')}.`;
+    }
+  }
+
+  return errors;
+}
+
+// Gli errori del server che riguardano un campo vengono mostrati sotto quel campo.
+function getServerFieldError(message: string): UserFormField | undefined {
+  if (/e-mail/i.test(message)) {
+    return 'email';
+  }
+
+  if (/password/i.test(message)) {
+    return 'password';
+  }
+
+  if (/nome/i.test(message)) {
+    return 'name';
+  }
+
+  return undefined;
+}
+
 type SecretaryUsersPageProps = {
   currentUserId?: number;
   onDirtyChange?: (dirty: boolean) => void;
@@ -32,6 +103,8 @@ export function SecretaryUsersPage({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showFieldErrors, setShowFieldErrors] = useState(false);
+  const [serverFieldErrors, setServerFieldErrors] = useState<UserFormErrors>({});
 
   useEffect(() => {
     async function loadUsersPage() {
@@ -71,6 +144,15 @@ export function SecretaryUsersPage({
       ...current,
       [field]: value,
     }));
+    setServerFieldErrors((current) => {
+      if (!(field in current)) {
+        return current;
+      }
+
+      const next = { ...current };
+      delete next[field as UserFormField];
+      return next;
+    });
   }
 
   function selectManagedDegreePrograms(options: HTMLSelectElement) {
@@ -97,23 +179,40 @@ export function SecretaryUsersPage({
     setEditingUserId(selectedUser.id);
     setUserForm(formFromUser);
     setSavedUserForm(formFromUser);
+    setShowFieldErrors(false);
+    setServerFieldErrors({});
   }
 
   function resetUserForm() {
     setEditingUserId(null);
     setUserForm(defaultUserForm);
     setSavedUserForm(defaultUserForm);
+    setShowFieldErrors(false);
+    setServerFieldErrors({});
   }
 
   async function handleSaveUser() {
-    setIsSubmitting(true);
     setError(null);
     setSuccessMessage(null);
+    setServerFieldErrors({});
+
+    const clientErrors = getUserFormErrors(userForm, Boolean(editingUserId));
+    const firstInvalidField = (['name', 'email', 'password'] as UserFormField[]).find(
+      (field) => clientErrors[field]
+    );
+
+    if (firstInvalidField) {
+      setShowFieldErrors(true);
+      document.getElementById(`user-${firstInvalidField}`)?.focus();
+      return;
+    }
+
+    setIsSubmitting(true);
 
     try {
       const payload = {
-        name: userForm.name,
-        email: userForm.email,
+        name: userForm.name.trim(),
+        email: userForm.email.trim(),
         role: userForm.role,
         managedDegreeProgramIds:
           userForm.role === UserRole.TEACHER
@@ -135,7 +234,15 @@ export function SecretaryUsersPage({
       await refreshUsers();
       resetUserForm();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Operazione non riuscita');
+      const message = err instanceof Error ? err.message : 'Operazione non riuscita';
+      const field = getServerFieldError(message);
+
+      if (field) {
+        setServerFieldErrors({ [field]: message });
+        document.getElementById(`user-${field}`)?.focus();
+      } else {
+        setError(message);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -162,6 +269,32 @@ export function SecretaryUsersPage({
     }
   }
 
+  const clientFieldErrors = showFieldErrors
+    ? getUserFormErrors(userForm, Boolean(editingUserId))
+    : {};
+  const fieldErrors: UserFormErrors = { ...clientFieldErrors, ...serverFieldErrors };
+
+  function fieldErrorProps(field: UserFormField, hintId?: string) {
+    const describedBy = [fieldErrors[field] ? `user-${field}-error` : undefined, hintId]
+      .filter(Boolean)
+      .join(' ');
+
+    return {
+      id: `user-${field}`,
+      'aria-required': true,
+      'aria-invalid': fieldErrors[field] ? true : undefined,
+      'aria-describedby': describedBy || undefined,
+    } as const;
+  }
+
+  function renderFieldError(field: UserFormField) {
+    return fieldErrors[field] ? (
+      <span className="field-error" id={`user-${field}-error`}>
+        {fieldErrors[field]}
+      </span>
+    ) : null;
+  }
+
   const visibleUsers = users
     .filter(
       (currentUser) =>
@@ -186,6 +319,7 @@ export function SecretaryUsersPage({
       <section className="dashboard-grid secretary-layout">
         <form
           className="panel"
+          noValidate
           onSubmit={(event) => {
             event.preventDefault();
             void handleSaveUser();
@@ -198,21 +332,37 @@ export function SecretaryUsersPage({
             </div>
           </div>
 
+          <p className="field-hint required-legend">
+            I campi contrassegnati da <span aria-hidden="true">*</span>
+            <span className="visually-hidden">asterisco</span> sono obbligatori.
+          </p>
+
           <div className="form-grid">
-            <label>
-              Nome
+            <div className="form-field">
+              <label htmlFor="user-name">
+                <span>
+                  Nome <span className="required-mark" aria-hidden="true">*</span>
+                </span>
+              </label>
               <input
+                {...fieldErrorProps('name')}
                 value={userForm.name}
                 onChange={(event) =>
                   updateUserFormField('name', event.target.value)
                 }
                 placeholder="Marco Rossi"
               />
-            </label>
+              {renderFieldError('name')}
+            </div>
 
-            <label>
-              E-mail
+            <div className="form-field">
+              <label htmlFor="user-email">
+                <span>
+                  E-mail <span className="required-mark" aria-hidden="true">*</span>
+                </span>
+              </label>
               <input
+                {...fieldErrorProps('email')}
                 type="email"
                 value={userForm.email}
                 onChange={(event) =>
@@ -220,7 +370,8 @@ export function SecretaryUsersPage({
                 }
                 placeholder="marcorossi@icloud.com"
               />
-            </label>
+              {renderFieldError('email')}
+            </div>
 
             <label>
               Ruolo
@@ -236,9 +387,14 @@ export function SecretaryUsersPage({
             </label>
 
             {!editingUserId ? (
-              <label>
-                Password
+              <div className="form-field">
+                <label htmlFor="user-password">
+                  <span>
+                    Password <span className="required-mark" aria-hidden="true">*</span>
+                  </span>
+                </label>
                 <input
+                  {...fieldErrorProps('password', 'user-password-hint')}
                   type="password"
                   value={userForm.password}
                   onChange={(event) =>
@@ -246,7 +402,12 @@ export function SecretaryUsersPage({
                   }
                   placeholder="Password1!"
                 />
-              </label>
+                <span className="field-hint" id="user-password-hint">
+                  Almeno 8 caratteri, con una lettera maiuscola e un carattere
+                  speciale tra ?^!@#.
+                </span>
+                {renderFieldError('password')}
+              </div>
             ) : null}
           </div>
 

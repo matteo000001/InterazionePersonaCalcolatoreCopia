@@ -1038,3 +1038,33 @@ textarea[aria-invalid='true'] {
 .alert.field-alert {
   margin: 0;
 }
+
+/* Campi obbligatori dei moduli della segreteria. */
+.required-mark {
+  color: var(--danger);
+}
+
+.required-legend {
+  margin: -8px 0 14px;
+}
+
+.form-field {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+  min-width: 0;
+  flex: 1 1 220px;
+}
+
+.form-field > label {
+  display: block;
+}
+
+/* I campi affiancati non si allungano se il vicino mostra un aiuto o un errore. */
+.form-grid {
+  align-items: flex-start;
+}
+
+.form-grid > label {
+  align-content: start;
+}
