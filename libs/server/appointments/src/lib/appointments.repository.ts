@@ -31,7 +31,7 @@ export class AppointmentsRepository {
         relations: {
           subject: true,
         },
-        order: { id: 'ASC' },
+        order: { examDate: 'ASC', id: 'ASC' },
       });
     }
 
@@ -39,7 +39,7 @@ export class AppointmentsRepository {
       relations: {
         subject: true,
       },
-      order: { id: 'ASC' },
+      order: { examDate: 'ASC', id: 'ASC' },
     });
   }
 
