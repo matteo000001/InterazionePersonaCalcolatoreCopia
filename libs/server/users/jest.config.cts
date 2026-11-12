@@ -18,4 +18,6 @@ module.exports = {
   },
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: 'test-output/jest/coverage',
+  // Nessun test ancora scritto per questo modulo: non deve far fallire la CI.
+  passWithNoTests: true,
 };

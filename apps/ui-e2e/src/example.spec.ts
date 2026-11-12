@@ -1,8 +1,8 @@
 import { test, expect } from '@playwright/test';
 
-test('has title', async ({ page }) => {
+test('un utente non autenticato viene portato al login', async ({ page }) => {
   await page.goto('/');
 
-  // Expect h1 to contain a substring.
-  expect(await page.locator('h1').innerText()).toContain('Welcome');
+  // Senza una sessione valida si arriva sempre alla pagina di accesso.
+  expect(await page.locator('h1').innerText()).toContain('Accedi al portale');
 });

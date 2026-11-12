@@ -52,8 +52,6 @@ export interface ExamAppointment {
   subject?: Subject;
 }
 
-export interface AuthenticatedUser extends User {}
-
 export type CalendarDayStatus =
   | 'available'
   | 'occupied'

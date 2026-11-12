@@ -13,8 +13,10 @@ describe('AppService', () => {
   });
 
   describe('getData', () => {
-    it('should return "Hello API"', () => {
-      expect(service.getData()).toEqual({ message: 'Hello API' });
+    it('should return the API health message', () => {
+      expect(service.getData()).toEqual({
+        message: 'Exam planner API is running',
+      });
     });
   });
 });

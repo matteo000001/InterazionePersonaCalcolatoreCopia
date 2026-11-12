@@ -2,8 +2,7 @@ import { Controller, Get, Query,UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 import { CalendarService } from './calendar.service';
-import { JwtAuthGuard, RolesGuard, Roles } from '@exam-planner/server-security';
-import { UserRole } from '@exam-planner/shared-types';
+import { JwtAuthGuard } from '@exam-planner/server-security';
 
 class CalendarAvailabilityQueryDto {
   @IsString()
