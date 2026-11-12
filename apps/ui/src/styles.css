@@ -202,6 +202,13 @@ textarea {
   font-weight: 800;
 }
 
+.auth-help-text {
+  margin: 4px 0 0;
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--muted);
+}
+
 .hero {
   display: block;
   margin-bottom: 24px;

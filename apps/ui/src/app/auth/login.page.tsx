@@ -200,6 +200,12 @@ export function LoginPage() {
           >
             {isRegistering ? 'Registrati' : 'Accedi'}
           </button>
+
+          {!isRegistering ? (
+            <p className="auth-help-text">
+              Password dimenticata? Contatta la segreteria didattica per reimpostarla.
+            </p>
+          ) : null}
         </form>
       </section>
     </main>
