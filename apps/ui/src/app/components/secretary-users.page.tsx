@@ -111,6 +111,7 @@ export function SecretaryUsersPage({
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [showFieldErrors, setShowFieldErrors] = useState(false);
   const [serverFieldErrors, setServerFieldErrors] = useState<UserFormErrors>({});
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     async function loadUsersPage() {
@@ -406,15 +407,25 @@ export function SecretaryUsersPage({
                     Password <span className="required-mark" aria-hidden="true">*</span>
                   </span>
                 </label>
-                <input
-                  {...fieldErrorProps('password', 'user-password-hint')}
-                  type="password"
-                  value={userForm.password}
-                  onChange={(event) =>
-                    updateUserFormField('password', event.target.value)
-                  }
-                  placeholder="Password1!"
-                />
+                <div className="password-input-wrapper">
+                  <input
+                    {...fieldErrorProps('password', 'user-password-hint')}
+                    type={showPassword ? 'text' : 'password'}
+                    value={userForm.password}
+                    onChange={(event) =>
+                      updateUserFormField('password', event.target.value)
+                    }
+                    placeholder="Password1!"
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowPassword((current) => !current)}
+                    aria-label={showPassword ? 'Nascondi password' : 'Mostra password'}
+                  >
+                    {showPassword ? 'Nascondi' : 'Mostra'}
+                  </button>
+                </div>
                 <span className="field-hint" id="user-password-hint">
                   Almeno 8 caratteri, con una lettera maiuscola e un carattere
                   speciale tra ?^!@#.

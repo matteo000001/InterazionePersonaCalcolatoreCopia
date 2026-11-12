@@ -31,6 +31,7 @@ export function LoginPage() {
   const [error, setError] = useState<string | null>(null);
   const [passwordError, setPasswordError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const passwordInputRef = useRef<HTMLInputElement>(null);
   const navigate = useNavigate();
 
@@ -150,12 +151,12 @@ export function LoginPage() {
           </label>
 
           <div className="auth-password-field">
-            <label htmlFor="auth-password">
-              Password
+            <label htmlFor="auth-password">Password</label>
+            <div className="password-input-wrapper">
               <input
                 id="auth-password"
                 ref={passwordInputRef}
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 value={password}
                 placeholder="Inserisci la tua password"
                 aria-describedby={
@@ -170,7 +171,15 @@ export function LoginPage() {
                 }}
                 required
               />
-            </label>
+              <button
+                type="button"
+                className="password-toggle"
+                onClick={() => setShowPassword((current) => !current)}
+                aria-label={showPassword ? 'Nascondi password' : 'Mostra password'}
+              >
+                {showPassword ? 'Nascondi' : 'Mostra'}
+              </button>
+            </div>
             {isRegistering ? (
               <div id="password-requirements" className="auth-password-hint">
                 <p>La password deve rispettare questi requisiti:</p>
