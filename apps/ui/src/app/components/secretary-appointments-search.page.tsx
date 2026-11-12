@@ -232,7 +232,7 @@ export function SecretaryAppointmentsSearchPage() {
             </label>
 
             <label>
-              Professore
+              Docente
               <select
                 value={appointmentSearch.teacherId}
                 disabled={!canSelectAppointmentOptionalFilters}
@@ -243,7 +243,7 @@ export function SecretaryAppointmentsSearchPage() {
                   )
                 }
               >
-                <option value="">Tutti i professori</option>
+                <option value="">Tutti i docenti</option>
                 {appointmentTeacherOptions.map((teacher) => (
                   <option key={teacher.id} value={teacher.id}>
                     {teacher.name}
