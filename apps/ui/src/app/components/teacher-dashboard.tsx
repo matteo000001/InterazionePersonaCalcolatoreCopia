@@ -56,6 +56,7 @@ export function TeacherDashboard() {
   const [notes, setNotes] = useState('');
   const [moveTargetDate, setMoveTargetDate] = useState('');
   const [loading, setLoading] = useState(true);
+  const [calendarLoading, setCalendarLoading] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -175,6 +176,7 @@ export function TeacherDashboard() {
     // Evita che una risposta arrivata dopo un cambio di filtro sovrascriva
     // il calendario del corso attualmente selezionato.
     let cancelled = false;
+    setCalendarLoading(true);
 
     async function loadTeacherData() {
       try {
@@ -214,6 +216,10 @@ export function TeacherDashboard() {
       } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : 'Caricamento fallito');
+        }
+      } finally {
+        if (!cancelled) {
+          setCalendarLoading(false);
         }
       }
     }
@@ -522,6 +528,7 @@ export function TeacherDashboard() {
                 days={availability}
                 selectedDate={selectedDate}
                 onSelect={selectDay}
+                loading={calendarLoading}
               />
             </>
           ) : (

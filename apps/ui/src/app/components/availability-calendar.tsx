@@ -7,6 +7,7 @@ interface AvailabilityCalendarProps {
   days: CalendarAvailabilityDay[];
   selectedDate?: string;
   onSelect: (date: string) => void;
+  loading?: boolean;
 }
 
 const weekdays = [
@@ -69,6 +70,7 @@ export function AvailabilityCalendar({
   days,
   selectedDate,
   onSelect,
+  loading,
 }: AvailabilityCalendarProps) {
   const [monthView, setMonthView] = useState<{ month?: string; selectedDate?: string }>({});
 
@@ -78,6 +80,14 @@ export function AvailabilityCalendar({
   }, [selectedDate]);
 
   const months = getCalendarMonths(days);
+
+  if (loading) {
+    return (
+      <div className="calendar-empty" role="status">
+        Caricamento del calendario…
+      </div>
+    );
+  }
 
   if (months.length === 0) {
     return (
