@@ -269,6 +269,19 @@ export function TeacherDashboard() {
     });
   }
 
+  // Se la mutazione è già andata a buon fine, un errore nel solo
+  // ricaricamento del calendario non deve nascondere il messaggio di
+  // successo: viene segnalato separatamente, senza farlo sembrare fallito.
+  async function refreshTeacherDataSafely() {
+    try {
+      await refreshTeacherData();
+    } catch {
+      setError(
+        'La modifica è stata salvata, ma l’aggiornamento del calendario non è riuscito. Ricarica la pagina per vedere i dati più recenti.'
+      );
+    }
+  }
+
   function selectSubject(subjectId: number | '') {
     setSelectedSubjectId(subjectId);
     setSuccessMessage(null);
@@ -594,7 +607,7 @@ export function TeacherDashboard() {
 
                               void handleMutation(async () => {
                                 await deleteTeacherAppointment(appointment.id);
-                                await refreshTeacherData();
+                                await refreshTeacherDataSafely();
                                 setNotes('');
                               }, 'Appello eliminato');
                             }}
@@ -640,7 +653,7 @@ export function TeacherDashboard() {
                                 await updateTeacherAppointment(appointment.id, {
                                   examDate: selectedMoveTarget.date,
                                 });
-                                await refreshTeacherData();
+                                await refreshTeacherDataSafely();
                                 setSelectedDate(selectedMoveTarget.date);
                                 setMoveTargetDate('');
                                 requestDayDetail();
@@ -695,7 +708,7 @@ export function TeacherDashboard() {
                       await updateTeacherAppointment(ownAppointmentOnSelectedDay.id, {
                         notes: trimmedNotes,
                       });
-                      await refreshTeacherData();
+                      await refreshTeacherDataSafely();
                       setNotes(trimmedNotes);
                     }, trimmedNotes ? 'Note dell’appello salvate' : 'Note dell’appello cancellate')
                   }
@@ -725,7 +738,7 @@ export function TeacherDashboard() {
                         examDate: selectedDate,
                         notes,
                       });
-                      await refreshTeacherData();
+                      await refreshTeacherDataSafely();
                     }, 'Appello inserito correttamente')
                   }
                   disabled={isSubmitting || Boolean(primaryBlockReason)}
