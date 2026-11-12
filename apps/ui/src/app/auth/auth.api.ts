@@ -9,16 +9,33 @@ export interface AuthResponse {
 }
 
 export async function login(email: string, password: string) {
-  const response = await fetch(`${API_URL}/auth/login`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email, password }),
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ email, password }),
+    });
+  } catch {
+    throw new Error(
+      'Impossibile contattare il server. Verifica la connessione e riprova.'
+    );
+  }
 
   if (!response.ok) {
-    throw new Error('Credenziali non valide');
+    if (response.status === 401) {
+      throw new Error('Credenziali non valide');
+    }
+
+    const error = await response.json().catch(() => ({ message: undefined }));
+    const message = Array.isArray(error.message) ? undefined : error.message;
+
+    throw new Error(
+      message ?? 'Il servizio non è disponibile al momento. Riprova più tardi.'
+    );
   }
 
   const data = (await response.json()) as AuthResponse;
