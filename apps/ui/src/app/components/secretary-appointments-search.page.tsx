@@ -94,10 +94,6 @@ export function SecretaryAppointmentsSearchPage() {
     setError(null);
 
     try {
-      if (!appointmentSearch.degreeProgramId || !appointmentSearch.courseYearId) {
-        throw new Error('Seleziona corso di laurea e anno di frequenza');
-      }
-
       const loadedAppointments = await fetchSecretaryAppointments({
         degreeProgramId: appointmentSearch.degreeProgramId,
         courseYearId: appointmentSearch.courseYearId,
@@ -158,12 +154,12 @@ export function SecretaryAppointmentsSearchPage() {
       )
       .map((subject) => subject.teacherId)
   );
-  const appointmentTeacherOptions = teacherUsers.filter((teacher) =>
-    appointmentTeacherIds.has(teacher.id)
-  );
   const canSelectAppointmentOptionalFilters =
     Boolean(appointmentSearch.degreeProgramId) &&
     Boolean(appointmentSearch.courseYearId);
+  const appointmentTeacherOptions = canSelectAppointmentOptionalFilters
+    ? teacherUsers.filter((teacher) => appointmentTeacherIds.has(teacher.id))
+    : teacherUsers;
 
   if (loading) {
     return <section className="dashboard-grid secretary-layout">Caricamento appelli...</section>;
@@ -235,7 +231,6 @@ export function SecretaryAppointmentsSearchPage() {
               Docente
               <select
                 value={appointmentSearch.teacherId}
-                disabled={!canSelectAppointmentOptionalFilters}
                 onChange={(event) =>
                   updateAppointmentSearchField(
                     'teacherId',
@@ -256,7 +251,6 @@ export function SecretaryAppointmentsSearchPage() {
               Materia
               <select
                 value={appointmentSearch.subjectId}
-                disabled={!canSelectAppointmentOptionalFilters}
                 onChange={(event) =>
                   updateAppointmentSearchField(
                     'subjectId',
@@ -274,15 +268,7 @@ export function SecretaryAppointmentsSearchPage() {
             </label>
           </div>
 
-          <button
-            type="submit"
-            className="primary"
-            disabled={
-              isSubmitting ||
-              !appointmentSearch.degreeProgramId ||
-              !appointmentSearch.courseYearId
-            }
-          >
+          <button type="submit" className="primary" disabled={isSubmitting}>
             Avvia ricerca
           </button>
         </form>
