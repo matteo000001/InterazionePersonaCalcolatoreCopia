@@ -1,6 +1,7 @@
 import {
   User,
 } from '@exam-planner/shared-types';
+import { handleApiError } from './shared/utils.api';
 
 const API_BASE_URL =
   import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3333/api';
@@ -29,12 +30,7 @@ async function request<T>(path: string, options: RequestOptions): Promise<T> {
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ message: 'Errore inatteso' }));
-    const message = Array.isArray(error.message)
-      ? error.message.join(', ')
-      : error.message;
-
-    throw new Error(message ?? 'Errore inatteso');
+    await handleApiError(response);
   }
 
   return response.json() as Promise<T>;

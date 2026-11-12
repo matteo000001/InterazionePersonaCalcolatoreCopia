@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { UserRole } from '@exam-planner/shared-types';
 import { login, register } from './auth.api';
 import { usePageTitle } from '../shared/use-page-title';
+import { SESSION_EXPIRED_NOTICE_KEY } from '../shared/utils.api';
 
 type AuthMode = 'login' | 'register';
 
@@ -35,6 +36,15 @@ export function LoginPage() {
 
   const isRegistering = authMode === 'register';
   usePageTitle(isRegistering ? 'Registrazione' : 'Accesso');
+
+  useEffect(() => {
+    const sessionExpiredNotice = sessionStorage.getItem(SESSION_EXPIRED_NOTICE_KEY);
+
+    if (sessionExpiredNotice) {
+      sessionStorage.removeItem(SESSION_EXPIRED_NOTICE_KEY);
+      setError(sessionExpiredNotice);
+    }
+  }, []);
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
