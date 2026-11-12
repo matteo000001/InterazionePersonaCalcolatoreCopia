@@ -177,6 +177,9 @@ export function TeacherDashboard() {
     // il calendario del corso attualmente selezionato.
     let cancelled = false;
     setCalendarLoading(true);
+    // Un nuovo tentativo di caricamento non deve lasciare visibile un
+    // errore di un tentativo precedente ormai superato.
+    setError(null);
 
     async function loadTeacherData() {
       try {
