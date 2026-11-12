@@ -54,6 +54,10 @@ export function TeacherDashboard() {
   const [selectedSubjectId, setSelectedSubjectId] = useState<number | ''>('');
   const [selectedDate, setSelectedDate] = useState<string | undefined>(undefined);
   const [notes, setNotes] = useState('');
+  // Vero solo da quando l'utente scrive davvero nel campo note: a differenza
+  // del confronto testuale, non risente dello sfasamento di un render tra
+  // l'aggiornamento del giorno selezionato e la sincronizzazione delle note.
+  const [notesDirty, setNotesDirty] = useState(false);
   const [moveTargetDate, setMoveTargetDate] = useState('');
   const [loading, setLoading] = useState(true);
   const [calendarLoading, setCalendarLoading] = useState(false);
@@ -91,6 +95,7 @@ export function TeacherDashboard() {
   const ownAppointmentNotes = ownAppointmentOnSelectedDay?.notes;
   useEffect(() => {
     setNotes(ownAppointmentNotes ?? '');
+    setNotesDirty(false);
   }, [selectedDate, ownAppointmentId, ownAppointmentNotes]);
 
   // Il messaggio di conferma si riferisce all'ultima azione: scompare da solo dopo
@@ -303,10 +308,24 @@ export function TeacherDashboard() {
     setDetailRequest((current) => current + 1);
   }
 
+  // Scrivere note e poi cambiare giorno senza salvare le cancellerebbe
+  // silenziosamente: si chiede conferma come già avviene per l'eliminazione.
   function selectDay(date: string) {
+    if (
+      date !== selectedDate &&
+      notesDirty &&
+      !window.confirm(
+        'Hai scritto delle note per questa giornata senza salvarle. ' +
+          'Vuoi scartarle e passare a un’altra data?'
+      )
+    ) {
+      return;
+    }
+
     setSelectedDate(date);
     setSuccessMessage(null);
     setMoveTargetDate('');
+    setNotesDirty(false);
     const ownAppointment =
       availability
         .find((day) => day.date === date)
@@ -319,6 +338,7 @@ export function TeacherDashboard() {
     setSelectedDegreeProgramId(degreeProgramId);
     setSelectedSubjectId('');
     setNotes('');
+    setNotesDirty(false);
     setMoveTargetDate('');
     setSuccessMessage(null);
 
@@ -685,7 +705,10 @@ export function TeacherDashboard() {
                 Note appello
                 <textarea
                   value={notes}
-                  onChange={(event) => setNotes(event.target.value)}
+                  onChange={(event) => {
+                    setNotes(event.target.value);
+                    setNotesDirty(true);
+                  }}
                   placeholder="Inserisci eventuali dettagli utili"
                   rows={2}
                   disabled={isSubmitting || Boolean(notesBlockReason)}
@@ -710,6 +733,7 @@ export function TeacherDashboard() {
                       });
                       await refreshTeacherDataSafely();
                       setNotes(trimmedNotes);
+                      setNotesDirty(false);
                     }, trimmedNotes ? 'Note dell’appello salvate' : 'Note dell’appello cancellate')
                   }
                   disabled={isSubmitting || Boolean(primaryBlockReason)}
