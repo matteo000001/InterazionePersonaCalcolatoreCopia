@@ -522,6 +522,10 @@ button:disabled {
   transform: none;
 }
 
+button[aria-busy='true']::after {
+  content: ' …';
+}
+
 .legend {
   flex-wrap: wrap;
   margin-bottom: 18px;

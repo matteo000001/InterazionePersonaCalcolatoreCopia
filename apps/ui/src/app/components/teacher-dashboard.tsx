@@ -600,6 +600,7 @@ export function TeacherDashboard() {
                             }}
                             disabled={isSubmitting || Boolean(dateBlockReason)}
                             aria-describedby={isSubmitting || dateBlockReason ? 'appointment-action-help' : undefined}
+                            aria-busy={isSubmitting}
                           >
                             Elimina appello
                           </button>
@@ -649,6 +650,7 @@ export function TeacherDashboard() {
                             }
                             disabled={Boolean(moveBlockReason)}
                             aria-describedby={moveBlockReason ? `appointment-move-help-${appointment.id}` : undefined}
+                            aria-busy={isSubmitting}
                           >
                             Sposta appello
                           </button>
@@ -699,6 +701,7 @@ export function TeacherDashboard() {
                   }
                   disabled={isSubmitting || Boolean(primaryBlockReason)}
                   aria-describedby={actionHelp ? 'appointment-action-help' : undefined}
+                  aria-busy={isSubmitting}
                 >
                   Salva note
                 </button>
@@ -727,6 +730,7 @@ export function TeacherDashboard() {
                   }
                   disabled={isSubmitting || Boolean(primaryBlockReason)}
                   aria-describedby={actionHelp ? 'appointment-action-help' : undefined}
+                  aria-busy={isSubmitting}
                 >
                   Inserisci appello in questa data
                 </button>
