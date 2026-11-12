@@ -37,6 +37,8 @@ import {
 } from './secretary.api';
 
 const SUCCESS_MESSAGE_DURATION_MS = 6000;
+// Deve restare allineato al vincolo @MaxLength(250) di CreateAppointmentDto.
+const NOTES_MAX_LENGTH = 250;
 
 export function TeacherDashboard() {
   usePageTitle('Pannello docente');
@@ -711,10 +713,14 @@ export function TeacherDashboard() {
                   }}
                   placeholder="Inserisci eventuali dettagli utili"
                   rows={2}
+                  maxLength={NOTES_MAX_LENGTH}
                   disabled={isSubmitting || Boolean(notesBlockReason)}
-                  aria-describedby={isSubmitting || notesBlockReason ? 'appointment-action-help' : undefined}
+                  aria-describedby={isSubmitting || notesBlockReason ? 'appointment-action-help' : 'notes-length-hint'}
                 />
               </label>
+              <span className="field-hint" id="notes-length-hint">
+                {notes.length}/{NOTES_MAX_LENGTH} caratteri
+              </span>
 
               {actionHelp ? (
                 <p id="appointment-action-help" className="appointment-action-help" aria-live="polite">
