@@ -87,6 +87,22 @@ export function SecretaryDashboard() {
     void loadCurrentUser();
   }, [token]);
 
+  // Con un modulo non salvato, il browser chiede conferma prima di chiudere o
+  // ricaricare la scheda (il testo della finestra lo decide il browser).
+  useEffect(() => {
+    if (!hasUnsavedChanges) {
+      return undefined;
+    }
+
+    function handleBeforeUnload(event: BeforeUnloadEvent) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [hasUnsavedChanges]);
+
   // Chiede conferma prima di abbandonare un modulo compilato e non salvato.
   const confirmLeaveForm = useCallback(
     () =>
