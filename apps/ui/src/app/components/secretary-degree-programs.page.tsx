@@ -30,6 +30,9 @@ export function SecretaryDegreeProgramsPage({
   const [editingProgramId, setEditingProgramId] = useState<string | null>(null);
   const [programSearch, setProgramSearch] = useState('');
   const [programSort, setProgramSort] = useState('name');
+  const [programTypeFilter, setProgramTypeFilter] = useState<
+    DegreeProgramType | 'none' | ''
+  >('');
   const [loading, setLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -178,9 +181,26 @@ export function SecretaryDegreeProgramsPage({
     (_item, index) => index + 1
   );
 
+  const matchesTypeFilter = (program: DegreeProgram) => {
+    if (programTypeFilter === '') {
+      return true;
+    }
+
+    if (programTypeFilter === 'none') {
+      return (
+        program.durationYears === null || program.durationYears === undefined
+      );
+    }
+
+    return (
+      program.durationYears === getDegreeProgramDuration(programTypeFilter)
+    );
+  };
   const visibleDegreePrograms = degreePrograms
-    .filter((program) =>
-      matchesSearch(programSearch, program.code, program.name)
+    .filter(
+      (program) =>
+        matchesTypeFilter(program) &&
+        matchesSearch(programSearch, program.code, program.name)
     )
     .sort((first, second) =>
       programSort === 'code'
@@ -321,7 +341,24 @@ export function SecretaryDegreeProgramsPage({
               { value: 'name', label: 'Nome' },
               { value: 'code', label: 'Codice' },
             ]}
-          />
+          >
+            <label>
+              Tipo corso
+              <select
+                value={programTypeFilter}
+                onChange={(event) =>
+                  setProgramTypeFilter(
+                    event.target.value as DegreeProgramType | 'none' | ''
+                  )
+                }
+              >
+                <option value="">Tutti i tipi</option>
+                <option value="triennale">Laurea triennale</option>
+                <option value="magistrale">Laurea magistrale</option>
+                <option value="none">Tipo non assegnato</option>
+              </select>
+            </label>
+          </ListToolbar>
 
           <div className="panel-section">
             {degreePrograms.length === 0 ? (
@@ -331,7 +368,7 @@ export function SecretaryDegreeProgramsPage({
               </p>
             ) : null}
             {degreePrograms.length > 0 && visibleDegreePrograms.length === 0 ? (
-              <p className="empty-state">Nessun corso corrisponde alla ricerca.</p>
+              <p className="empty-state">Nessun corso corrisponde ai filtri.</p>
             ) : null}
             {visibleDegreePrograms.map((program) => (
               <div className="summary-row list-row" key={program.id}>
