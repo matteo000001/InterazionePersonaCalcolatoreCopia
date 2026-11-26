@@ -14,11 +14,6 @@ type AppointmentMutationBody = {
   notes?: string;
 };
 
-type TeacherFilters = {
-  degreeProgramId: string;
-  courseYearId: string;
-};
-
 function getAuthHeaders() {
   const token = localStorage.getItem('access_token');
 
@@ -28,19 +23,10 @@ function getAuthHeaders() {
   };
 }
 
-export async function fetchTeacherAppointments(
-  filters: TeacherFilters
-): Promise<ExamAppointment[]> {
-  const searchParams = new URLSearchParams({
-    degreeProgramId: filters.degreeProgramId,
-    courseYearId: filters.courseYearId,
+export async function fetchTeacherAppointments(): Promise<ExamAppointment[]> {
+  const response = await fetch(`${API_URL}/appointments/mine`, {
+    headers: getAuthHeaders(),
   });
-  const response = await fetch(
-    `${API_URL}/appointments?${searchParams.toString()}`,
-    {
-      headers: getAuthHeaders(),
-    }
-  );
 
   if (!response.ok) {
     await handleApiError(response);

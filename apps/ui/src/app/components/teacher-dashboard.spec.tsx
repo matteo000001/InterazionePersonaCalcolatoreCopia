@@ -254,6 +254,88 @@ describe('Visibilità del dettaglio della giornata', () => {
     expect(scrollIntoView).toHaveBeenCalledTimes(1);
   });
 
+  it('apre dal riepilogo la materia, il corso e l’anno corretti anche a parità di data', async () => {
+    const firstSubject = {
+      id: 1, name: 'Geometria', teacherId: 1, degreeProgramIds: ['course-1'], courseYearId: 'year-1',
+    };
+    const secondSubject = {
+      id: 3, name: 'Statistica', teacherId: 1, degreeProgramIds: ['course-2'], courseYearId: 'year-2',
+    };
+    const firstAppointment = { ...appointment, subject: firstSubject };
+    const secondAppointment = {
+      ...appointment, id: 'appointment-2', subjectId: secondSubject.id, subject: secondSubject,
+      degreeProgramId: 'course-2', courseYearId: 'year-2', notes: 'Prova pratica',
+    };
+    jest.mocked(fetchTeacherAppointments).mockResolvedValue([firstAppointment, secondAppointment]);
+    jest.mocked(fetchSecretaryCourseYears).mockResolvedValue([
+      { id: 'year-1', year: 1 }, { id: 'year-2', year: 2 },
+    ]);
+    jest.mocked(fetchTeacherSubjects).mockImplementation(async ({ degreeProgramId }) =>
+      degreeProgramId === 'course-1' ? [firstSubject] : [
+        { ...secondSubject, id: 2, name: 'Analisi', courseYearId: 'year-1' }, secondSubject,
+      ]
+    );
+    jest.mocked(fetchTeacherAvailability).mockImplementation(async (course, year) => [
+      {
+        ...availability[0],
+        appointments: course === 'course-1' ? [firstAppointment]
+          : year === 'year-2' ? [secondAppointment] : [],
+      },
+      availability[1],
+    ]);
+
+    const panel = await renderDashboard();
+    const list = within(screen.getByRole('region', { name: 'I tuoi appelli' }));
+    const coursePicker = screen.getByRole('combobox', { name: 'Corso di laurea' }) as HTMLSelectElement;
+    const subjectPicker = screen.getByRole('combobox', { name: 'Materia' }) as HTMLSelectElement;
+    expect(fetchTeacherAppointments).toHaveBeenCalledWith();
+    expect((await list.findByRole('button', { name: /Geometria/ })).textContent).toContain('Primo corso');
+    const target = list.getByRole('button', { name: /Statistica/ });
+    expect(target.textContent).toContain('Secondo corso');
+    expect(coursePicker.value).toBe('course-1');
+
+    fireEvent.click(target);
+
+    await waitFor(() => {
+      expect(coursePicker.value).toBe('course-2');
+      expect(subjectPicker.value).toBe('3');
+      expect(fetchTeacherAvailability).toHaveBeenLastCalledWith('course-2', 'year-2');
+      expect((within(panel).getByRole('textbox', { name: 'Note appello' }) as HTMLTextAreaElement).value)
+        .toBe('Prova pratica');
+    });
+    expect(list.getByRole('button', { name: /Geometria/ })).toBeTruthy();
+
+    fireEvent.change(coursePicker, { target: { value: '' } });
+
+    expect(screen.queryByRole('table', { name: 'gennaio 2027' })).toBeNull();
+    expect(within(screen.getByRole('region', { name: 'I tuoi appelli' })).getAllByRole('button')).toHaveLength(2);
+  });
+
+  it('mostra l’elenco vuoto solo dopo la risposta relativa a tutti i corsi', async () => {
+    let finish!: (appointments: ExamAppointment[]) => void;
+    jest.mocked(fetchTeacherAppointments).mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+    jest.mocked(fetchTeacherAvailability).mockResolvedValue([availability[1]]);
+    render(<TeacherDashboard />);
+
+    const list = within(await screen.findByRole('region', { name: 'I tuoi appelli' }));
+    expect(list.queryByText(/non hai ancora inserito appelli/i)).toBeNull();
+
+    await act(async () => { finish([]); });
+
+    expect(await list.findByText(/non hai ancora inserito appelli/i)).toBeTruthy();
+  });
+
+  it('distingue un errore del riepilogo da un elenco vuoto e consente di riprovare', async () => {
+    jest.mocked(fetchTeacherAppointments).mockRejectedValueOnce(new Error('Offline'));
+    await renderDashboard();
+    const list = within(screen.getByRole('region', { name: 'I tuoi appelli' }));
+
+    expect(list.getByRole('alert').textContent).toContain('Non è stato possibile caricare');
+    expect(list.queryByText(/non hai ancora inserito appelli/i)).toBeNull();
+    fireEvent.click(list.getByRole('button', { name: 'Riprova' }));
+    expect(await list.findByRole('button', { name: /Nota salvata/ })).toBeTruthy();
+  });
+
   it('su desktop mantiene ferma la pagina se il dettaglio è già visibile', async () => {
     await renderDashboard();
     setHeadingPosition(40, 80);

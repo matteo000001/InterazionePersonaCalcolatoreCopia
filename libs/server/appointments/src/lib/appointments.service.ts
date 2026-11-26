@@ -33,7 +33,12 @@ export class AppointmentsService {
   ) {}
 
   async list(query: ListAppointmentsQueryDto): Promise<ExamAppointmentEntity[]> {
-    return this.appointmentsRepository.findAll(query);
+    const { degreeProgramId, courseYearId } = query;
+    return this.appointmentsRepository.findAll({ degreeProgramId, courseYearId });
+  }
+
+  listForTeacher(teacherId: number): Promise<ExamAppointmentEntity[]> {
+    return this.appointmentsRepository.findAll({ teacherId });
   }
 
   async create(dto: CreateAppointmentDto, user: User) {

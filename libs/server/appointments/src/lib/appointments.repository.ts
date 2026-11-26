@@ -16,29 +16,19 @@ export class AppointmentsRepository {
     private readonly repository: Repository<ExamAppointmentEntity>
   ) {}
 
-  findAll(filters?: {
+  findAll(filters: {
     degreeProgramId?: string;
     courseYearId?: string;
-  }): Promise<ExamAppointmentEntity[]> {
-    if (filters?.degreeProgramId || filters?.courseYearId) {
-      return this.repository.find({
-        where: {
-          ...(filters.degreeProgramId
-            ? { degreeProgramId: filters.degreeProgramId }
-            : {}),
-          ...(filters.courseYearId ? { courseYearId: filters.courseYearId } : {}),
-        },
-        relations: {
-          subject: true,
-        },
-        order: { examDate: 'ASC', id: 'ASC' },
-      });
-    }
-
+    teacherId?: number;
+  } = {}): Promise<ExamAppointmentEntity[]> {
+    const { degreeProgramId, courseYearId, teacherId } = filters;
     return this.repository.find({
-      relations: {
-        subject: true,
+      where: {
+        ...(degreeProgramId ? { degreeProgramId } : {}),
+        ...(courseYearId ? { courseYearId } : {}),
+        ...(teacherId !== undefined ? { teacherId } : {}),
       },
+      relations: { subject: true },
       order: { examDate: 'ASC', id: 'ASC' },
     });
   }

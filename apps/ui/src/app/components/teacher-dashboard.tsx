@@ -11,6 +11,7 @@ import {
   UserRole,
 } from '@exam-planner/shared-types';
 import { AvailabilityCalendar } from './availability-calendar';
+import { OwnAppointments } from './own-appointments';
 import { PlanningWindow } from './planning-window';
 import { api } from '../api';
 import { getAccessToken } from '../auth/auth.api';
@@ -25,7 +26,6 @@ import {
 import {
   createTeacherAppointment,
   deleteTeacherAppointment,
-  fetchTeacherAppointments,
   fetchTeacherAvailability,
   fetchTeacherSubjects,
   updateTeacherAppointment,
@@ -48,7 +48,7 @@ export function TeacherDashboard() {
   const [degreePrograms, setDegreePrograms] = useState<DegreeProgram[]>([]);
   const [courseYears, setCourseYears] = useState<CourseYear[]>([]);
   const [session, setSession] = useState<ExamSession | null>(null);
-  const [appointments, setAppointments] = useState<ExamAppointment[]>([]);
+  const [appointmentsRevision, setAppointmentsRevision] = useState(0);
   const [subjects, setSubjects] = useState<Subject[]>([]);
   const [availability, setAvailability] = useState<CalendarAvailabilityDay[]>([]);
   const [selectedDegreeProgramId, setSelectedDegreeProgramId] = useState('');
@@ -84,9 +84,6 @@ export function TeacherDashboard() {
   const ownAppointmentOnSelectedDay = selectedDay?.appointments.find(
     (appointment) => appointment.teacherId === user?.id
   );
-  const ownAppointments = user
-    ? appointments.filter((appointment) => appointment.teacherId === user.id)
-    : [];
   const moveTargetDays = availability.filter(isCalendarDayAvailable);
   const selectedMoveTarget = moveTargetDays.find((day) => day.date === moveTargetDate);
 
@@ -190,12 +187,8 @@ export function TeacherDashboard() {
 
     async function loadTeacherData() {
       try {
-        const [loadedAppointments, loadedAvailability, loadedSubjects] =
+        const [loadedAvailability, loadedSubjects] =
           await Promise.all([
-            fetchTeacherAppointments({
-              degreeProgramId: selectedDegreeProgramId,
-              courseYearId: selectedCourseYearId,
-            }),
             fetchTeacherAvailability(selectedDegreeProgramId, selectedCourseYearId),
             fetchTeacherSubjects({
               teacherId: user.id,
@@ -207,13 +200,16 @@ export function TeacherDashboard() {
           return;
         }
 
-        setAppointments(loadedAppointments);
         setAvailability(loadedAvailability);
         setSubjects(loadedSubjects);
         setSelectedSubjectId((currentSubjectId) => {
-          const nextSubject =
-            loadedSubjects.find((subject) => subject.id === currentSubjectId) ??
-            loadedSubjects[0];
+          if (currentSubjectId !== '') {
+            return loadedSubjects.some((subject) =>
+              subject.id === currentSubjectId && subject.courseYearId === selectedCourseYearId
+            ) ? currentSubjectId : '';
+          }
+
+          const nextSubject = loadedSubjects[0];
 
           if (nextSubject) {
             setSelectedCourseYearId(nextSubject.courseYearId);
@@ -246,12 +242,8 @@ export function TeacherDashboard() {
       return;
     }
 
-    const [loadedAppointments, loadedAvailability, loadedSubjects] =
+    const [loadedAvailability, loadedSubjects] =
       await Promise.all([
-        fetchTeacherAppointments({
-          degreeProgramId: selectedDegreeProgramId,
-          courseYearId: selectedCourseYearId,
-        }),
         fetchTeacherAvailability(selectedDegreeProgramId, selectedCourseYearId),
         fetchTeacherSubjects({
           teacherId: user.id,
@@ -259,13 +251,16 @@ export function TeacherDashboard() {
         }),
       ]);
 
-    setAppointments(loadedAppointments);
     setAvailability(loadedAvailability);
     setSubjects(loadedSubjects);
     setSelectedSubjectId((currentSubjectId) => {
-      const nextSubject =
-        loadedSubjects.find((subject) => subject.id === currentSubjectId) ??
-        loadedSubjects[0];
+      if (currentSubjectId !== '') {
+        return loadedSubjects.some((subject) =>
+          subject.id === currentSubjectId && subject.courseYearId === selectedCourseYearId
+        ) ? currentSubjectId : '';
+      }
+
+      const nextSubject = loadedSubjects[0];
 
       if (nextSubject) {
         setSelectedCourseYearId(nextSubject.courseYearId);
@@ -280,6 +275,7 @@ export function TeacherDashboard() {
   // ricaricamento del calendario non deve nascondere il messaggio di
   // successo: viene segnalato separatamente, senza farlo sembrare fallito.
   async function refreshTeacherDataSafely() {
+    setAppointmentsRevision((revision) => revision + 1);
     try {
       await refreshTeacherData();
     } catch {
@@ -303,6 +299,7 @@ export function TeacherDashboard() {
       return;
     }
 
+    if (subject.courseYearId !== selectedCourseYearId) setAvailability([]);
     setSelectedCourseYearId(subject.courseYearId);
   }
 
@@ -312,15 +309,15 @@ export function TeacherDashboard() {
 
   // Scrivere note e poi cambiare giorno senza salvare le cancellerebbe
   // silenziosamente: si chiede conferma come già avviene per l'eliminazione.
+  function canLeaveDay() {
+    return !notesDirty || window.confirm(
+      'Hai scritto delle note per questa giornata senza salvarle. ' +
+        'Vuoi scartarle e passare a un’altra data?'
+    );
+  }
+
   function selectDay(date: string) {
-    if (
-      date !== selectedDate &&
-      notesDirty &&
-      !window.confirm(
-        'Hai scritto delle note per questa giornata senza salvarle. ' +
-          'Vuoi scartarle e passare a un’altra data?'
-      )
-    ) {
+    if (date !== selectedDate && !canLeaveDay()) {
       return;
     }
 
@@ -336,7 +333,35 @@ export function TeacherDashboard() {
     requestDayDetail();
   }
 
+  function openAppointment(appointment: ExamAppointment) {
+    const sameCalendar = selectedDegreeProgramId === appointment.degreeProgramId
+      && selectedCourseYearId === appointment.courseYearId;
+    if (sameCalendar && appointment.examDate === selectedDate) {
+      setSelectedSubjectId(appointment.subjectId);
+      requestDayDetail();
+      return;
+    }
+    if (!canLeaveDay()) return;
+
+    if (!sameCalendar) {
+      setAvailability([]);
+      setSubjects([]);
+      setCalendarLoading(true);
+      setSelectedDegreeProgramId(appointment.degreeProgramId);
+      setSelectedCourseYearId(appointment.courseYearId);
+    }
+    setSelectedSubjectId(appointment.subjectId);
+    setSelectedDate(appointment.examDate);
+    setNotes(appointment.notes ?? '');
+    setNotesDirty(false);
+    setMoveTargetDate('');
+    setSuccessMessage(null);
+    requestDayDetail();
+  }
+
   function selectDegreeProgram(degreeProgramId: string) {
+    setAvailability([]);
+    setSubjects([]);
     setSelectedDegreeProgramId(degreeProgramId);
     setSelectedSubjectId('');
     setNotes('');
@@ -348,9 +373,6 @@ export function TeacherDashboard() {
       // Nessun corso selezionato: il calendario e i filtri dipendenti vengono
       // svuotati, così ciò che si vede corrisponde ai filtri impostati.
       setSelectedCourseYearId('');
-      setSubjects([]);
-      setAppointments([]);
-      setAvailability([]);
       setSelectedDate(undefined);
       return;
     }
@@ -785,29 +807,6 @@ export function TeacherDashboard() {
                 ) : null}
               </div>
 
-              <div className="own-appointments">
-                <h4>I tuoi appelli</h4>
-                {ownAppointments.length > 0 ? (
-                  ownAppointments.map((appointment) => (
-                    <button
-                      type="button"
-                      className={`compact-appointment ${
-                        appointment.examDate === selectedDate ? 'is-current' : ''
-                      }`}
-                      key={appointment.id}
-                      onClick={() => selectDay(appointment.examDate)}
-                      title="Apri questa giornata per modificare l'appello"
-                    >
-                      <time dateTime={appointment.examDate}>
-                        {formatCalendarDate(appointment.examDate)}
-                      </time>
-                      <span>{appointment.notes || 'Nessuna nota'}</span>
-                    </button>
-                  ))
-                ) : (
-                  <p className="empty-state">Non hai ancora inserito appelli.</p>
-                )}
-              </div>
             </>
           ) : (
             <p className="empty-state">
@@ -818,6 +817,15 @@ export function TeacherDashboard() {
                   : 'Scegli un giorno dal calendario per vedere appelli presenti e azioni disponibili.'}
             </p>
           )}
+          <OwnAppointments
+            key={`${user.id}:${appointmentsRevision}`}
+            programs={degreePrograms}
+            managedProgramIds={user.managedDegreeProgramIds ?? []}
+            session={session}
+            currentId={ownAppointmentOnSelectedDay?.id}
+            busy={isSubmitting}
+            onOpen={openAppointment}
+          />
         </aside>
       </section>
     </main>

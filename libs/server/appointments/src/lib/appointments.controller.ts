@@ -47,6 +47,15 @@ export class AppointmentsController {
   list(@Query() query: ListAppointmentsQueryDto) {
     return this.appointmentsService.list(query);
   }
+
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @Get('mine')
+  @ApiOkResponse({ description: 'Returns the signed-in user’s appointments across all degree programs and course years.' })
+  listMine(@CurrentUser() user: AuthenticatedUser) {
+    return this.appointmentsService.listForTeacher(user.id);
+  }
+
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @Post()
